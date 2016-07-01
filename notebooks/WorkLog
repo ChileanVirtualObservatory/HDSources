@@ -27,6 +27,12 @@
 - Added flag to show center points on compare\_plot() function.
 - added study\_of\_parameters notebook
 
+### Session WorkLog [1/07/2016]
+- Discussed the meaning of the weight parameters (alpha and beta). They should be setted by the user, but some physical interpretation must be present.
+- Discussed the parameter \lambda1(x) = f(x)/RMS. Noticed that this inclusion will change the variational formulation. It will be better if we have constante lambda1, but induced from the data.
+- Discussed the parameter \lambda2. A relation between maximum peak and spectral resolution is linked with this parameter.
+- The gradient of the data was plotted. If we want to perform outlier detection, then a translating parameter should be used to penalize only the gradients above some threshold. This threshold must be computed with the data information.
+- Then the \lambda2 parameters only controls the smoothness of the solution.
 
 ### Random ideas:
 * Better way to update phi_x matrices: e^{x^2/\sigma^2} ^= (sigma^2 / sigma0^2)
