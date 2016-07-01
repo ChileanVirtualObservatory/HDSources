@@ -11,3 +11,13 @@ IDEAS:
 * Adjust $\alpha,\beta$ acording to order of magnitud of initial errors
 * Force c coefficients to be positive
 
+
+TODO2 (17/06/2016):
+* splines para phi2
+* connection between beta and (rms,er)
+* \phi normalization
+* \alpha(RMS)
+* convolution to find grid points
+* best way to compute phi_x matrices
+* \lambda(x) = f(x)/RMS
+* \lambda(x) = n/Er
