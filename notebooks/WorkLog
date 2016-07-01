@@ -1,0 +1,29 @@
+# Welcome to the VarClump WorkLog!
+
+
+### Overview of work done until 17/06/2016
+- Implemented concept test with two approaches: Variating $c,\sigma$ together and separately.
+- Variational formulation and deduction (Created a Mathematica notebook with analysis and deduction)
+- Implemented ELFunc classes to handle variational problems.
+- Proposed two penalizing functions $\psi_1$ and $\psi_2$ with corresponding parameters.(Created a Mathematica notebook with analysis of each one)
+- Added experiments for both approaches. Orion Nebulae CO observations are used.
+- Analysis of results and their dependence with parameters of Lagrangian formulation.
+- Minimal broadening of gaussians $\sigma_i^2 = \sigma_0^2 + \widehat{\sigma}^2$
+- Force c coefficients to be positive
+
+
+### Session WorkLog [17/06/2016]
+- We need to determine a relation between model parameters and physical parameters of cube. Adjust $\alpha,\beta$ acording to the order of magnitud of RMS of data.
+- Test splines for phi2 func.
+- Ideas for (alpha, lambda1): \alpha(RMS) - \lambda(x) = f(x)/RMS - \lambda(x) = n/Er
+- Desirable properties of psi2: Slowly penalize low variations and Fast penalizing of high variations.
+- In 2D implementation, choose center points with knowledge of data: Fast convolution method...
+
+
+### Between sessions WorkLog
+- Created EulerLagrange1D module, to avoid rewriting the functions on each noteboko
+
+
+
+### Random ideas:
+* Better way to update phi_x matrices: e^{x^2/\sigma^2} ^= (sigma^2 / sigma0^2)

@@ -1,0 +1,133 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      3655,        123]
+NotebookOptionsPosition[      3296,        105]
+NotebookOutlinePosition[      3649,        121]
+CellTagsIndexPosition[      3606,        118]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"\[CapitalPsi]", "[", 
+   RowBox[{"x_", ",", "\[Lambda]_"}], "]"}], ":=", 
+  RowBox[{
+   RowBox[{"\[Lambda]", "^", "2"}], " ", 
+   RowBox[{"Log", "[", 
+    RowBox[{"1", "+", 
+     FractionBox["x", 
+      RowBox[{"\[Lambda]", "^", "2"}]]}], "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.675157942165379*^9, 3.675158019975586*^9}, {
+  3.675158052636106*^9, 3.6751580528310537`*^9}, {3.675173875357583*^9, 
+  3.675173878118808*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Series", "[", 
+  RowBox[{
+   RowBox[{"\[CapitalPsi]", "[", 
+    RowBox[{"x", ",", "\[Lambda]"}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"x", ",", "0", ",", "10"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.675158023104026*^9, 3.675158046685671*^9}, {
+  3.675158373377837*^9, 3.6751583737369633`*^9}}],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"x", "-", 
+   FractionBox[
+    SuperscriptBox["x", "2"], 
+    RowBox[{"2", " ", 
+     SuperscriptBox["\[Lambda]", "2"]}]], "+", 
+   FractionBox[
+    SuperscriptBox["x", "3"], 
+    RowBox[{"3", " ", 
+     SuperscriptBox["\[Lambda]", "4"]}]], "-", 
+   FractionBox[
+    SuperscriptBox["x", "4"], 
+    RowBox[{"4", " ", 
+     SuperscriptBox["\[Lambda]", "6"]}]], "+", 
+   FractionBox[
+    SuperscriptBox["x", "5"], 
+    RowBox[{"5", " ", 
+     SuperscriptBox["\[Lambda]", "8"]}]], "-", 
+   FractionBox[
+    SuperscriptBox["x", "6"], 
+    RowBox[{"6", " ", 
+     SuperscriptBox["\[Lambda]", "10"]}]], "+", 
+   FractionBox[
+    SuperscriptBox["x", "7"], 
+    RowBox[{"7", " ", 
+     SuperscriptBox["\[Lambda]", "12"]}]], "-", 
+   FractionBox[
+    SuperscriptBox["x", "8"], 
+    RowBox[{"8", " ", 
+     SuperscriptBox["\[Lambda]", "14"]}]], "+", 
+   FractionBox[
+    SuperscriptBox["x", "9"], 
+    RowBox[{"9", " ", 
+     SuperscriptBox["\[Lambda]", "16"]}]], "-", 
+   FractionBox[
+    SuperscriptBox["x", "10"], 
+    RowBox[{"10", " ", 
+     SuperscriptBox["\[Lambda]", "18"]}]], "+", 
+   InterpretationBox[
+    SuperscriptBox[
+     RowBox[{"O", "[", "x", "]"}], "11"],
+    SeriesData[$CellContext`x, 0, {}, 1, 11, 1],
+    Editable->False]}],
+  SeriesData[$CellContext`x, 0, {
+   1, Rational[-1, 2] $CellContext`\[Lambda]^(-2), 
+    Rational[1, 3] $CellContext`\[Lambda]^(-4), 
+    Rational[-1, 4] $CellContext`\[Lambda]^(-6), 
+    Rational[1, 5] $CellContext`\[Lambda]^(-8), 
+    Rational[-1, 6] $CellContext`\[Lambda]^(-10), 
+    Rational[1, 7] $CellContext`\[Lambda]^(-12), 
+    Rational[-1, 8] $CellContext`\[Lambda]^(-14), 
+    Rational[1, 9] $CellContext`\[Lambda]^(-16), 
+    Rational[-1, 10] $CellContext`\[Lambda]^(-18)}, 1, 11, 1],
+  Editable->False]], "Output",
+ CellChangeTimes->{{3.675158043171379*^9, 3.67515805559979*^9}, 
+   3.675158374706368*^9}]
+}, Open  ]]
+},
+WindowSize->{808, 755},
+WindowMargins->{{4, Automatic}, {Automatic, 4}},
+FrontEndVersion->"10.1 for Mac OS X x86 (32-bit, 64-bit Kernel) (March 23, \
+2015)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 460, 12, 45, "Input"],
+Cell[CellGroupData[{
+Cell[1043, 36, 333, 8, 28, "Input"],
+Cell[1379, 46, 1901, 56, 51, "Output"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+
