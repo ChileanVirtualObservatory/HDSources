@@ -10,7 +10,8 @@ from scipy import interpolate, optimize
 """
 HELPER FUNCTIONS TO VISUALIZE AND COMPARE SOLUTIONS
 """
-def compare_plot(c, sig, xc, resolution=10, title=None, log=False):
+def compare_plot(c, sig, xc, resolution=10, title=None, evaluation=True, center=False):
+    N = np.size(xc)
     _xe = np.linspace(0., 1., 10*N, endpoint=True)
     _Dx = np.empty((10*N,N))
     for k in range(10*N):
@@ -20,8 +21,9 @@ def compare_plot(c, sig, xc, resolution=10, title=None, log=False):
     u = np.dot(phi_m, c**2)
     plt.figure(figsize=(10,6))
     plt.plot(_xe, u, 'r-', label='Solution')
-    plt.plot(x_, f(x_), 'b--', label='Data')
-    plt.plot(xe, f(xe), 'go', label='Evaluation points')
+    plt.plot(_xe, f(_xe), 'b--', label='Data')
+    if evaluation: plt.plot(xe, f(xe), 'go', label='Evaluation points')
+    if center: plt.plot(xc, f(xc), 'ro', label='Center points')
     plt.title(title)
     plt.legend(bbox_to_anchor=(1.3, 1.0))
     plt.show()
@@ -122,15 +124,15 @@ def d2psi(x, lamb=1.):
 """
 RBF (GAUSSIAN) FUNCTION AND ITS DERIVATIVES
 """
-def phi(x, sig, minsig=0):
+def phi(x, sig, minsig=0.):
     retval = ne.evaluate('exp(-x**2/(2*(minsig**2+sig**2)))')
     return retval
 
-def phix(x, sig, minsig=0):
+def phix(x, sig, minsig=0.):
     retval = ne.evaluate('-(1./(minsig**2+sig**2)) * exp(-x**2/(2*(minsig**2+sig**2))) * x')
     return retval
 
-def phixx(x, sig, minsig=0):
+def phixx(x, sig, minsig=0.):
     retval = ne.evaluate('(1./(minsig**2+sig**2)**2) * exp(-x**2/(2*(minsig**2+sig**2))) * (x**2 - minsig**2 - sig**2)')
     return retval
 

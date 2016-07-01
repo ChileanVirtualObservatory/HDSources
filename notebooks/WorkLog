@@ -21,8 +21,11 @@
 
 
 ### Between sessions WorkLog
-- Created EulerLagrange1D module, to avoid rewriting the functions on each noteboko
-
+- Created EulerLagrange1D module, to avoid rewriting the functions on each notebook.
+- New Phi2 proposal: 5th order spline. Added Mathematica notebook with implementation and analysis.
+- Implemented the new Psi proposal on notebooks
+- Added flag to show center points on compare\_plot() function.
+- added study\_of\_parameters notebook
 
 
 ### Random ideas:
