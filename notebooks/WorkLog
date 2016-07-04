@@ -34,5 +34,11 @@
 - The gradient of the data was plotted. If we want to perform outlier detection, then a translating parameter should be used to penalize only the gradients above some threshold. This threshold must be computed with the data information.
 - Then the \lambda2 parameters only controls the smoothness of the solution.
 
+### Between sessions Worklog
+- Fixed problem with init method of ELFunc() 2D version, working now!
+- Added a better way of computing phi__ matrices at each evaluation of F()
+- F() evaluation working good!
+
+
 ### Random ideas:
 * Better way to update phi_x matrices: e^{x^2/\sigma^2} ^= (sigma^2 / sigma0^2)
