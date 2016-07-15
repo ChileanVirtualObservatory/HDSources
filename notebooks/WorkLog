@@ -40,6 +40,7 @@
 - F() evaluation working good!
 - Improved the selection of center points and boundary points (A more general way)
 - Reimplemented 2D version in a more clean way (v1).
+- Improved grid points generation.
 
 
 ### Random ideas:
