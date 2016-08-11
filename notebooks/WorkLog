@@ -8,8 +8,8 @@
 - Proposed two penalizing functions $\psi_1$ and $\psi_2$ with corresponding parameters.(Created a Mathematica notebook with analysis of each one)
 - Added experiments for both approaches. Orion Nebulae CO observations are used.
 - Analysis of results and their dependence with parameters of Lagrangian formulation.
-- Minimal broadening of gaussians $\sigma_i^2 = \sigma_0^2 + \widehat{\sigma}^2$
-- Force c coefficients to be positive
+- Minimal broadening of gaussians $\sigma_i^2 = \sigma_0^2 + \widehat{\sigma}^2$.
+- Force c coefficients to be positive.
 
 
 ### Session WorkLog [17/06/2016]
@@ -41,6 +41,24 @@
 - Improved the selection of center points and boundary points (A more general way)
 - Reimplemented 2D version in a more clean way (v1).
 - Improved grid points generation.
+
+
+### Session Worklog [15/07/2016]
+- Implement a better strategy for center points: some clustering algorithm.
+- Improve the strategy for evaluation of phi_* matrices.
+- Implement the sparse representation with scipy sparse module.
+- theoretical analysis of action radio for gaussian functions: x^p e^(-x)
+
+
+### Between sessions Worklog
+- 
+
+
+### Session Worklog [5/08/2016]
+- gaussclump to find peaks as preprocessing
+- repeat points to generate weights
+- 
+
 
 
 ### Random ideas:
