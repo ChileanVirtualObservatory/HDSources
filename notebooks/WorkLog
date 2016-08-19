@@ -57,6 +57,13 @@
 ### Session Worklog [5/08/2016]
 - gaussclump to find peaks as preprocessing
 - repeat points to generate weights
+
+### Between sessions Worklog
+
+
+### Session Worklog [19/08/2016]
+- create an uniform grid of points on pixels below of the RMS value, and join them with the concetrated points inside the RMS value.
+- implement compactly support guassian, with $5\sigma$ as effective support.
 - 
 
 
