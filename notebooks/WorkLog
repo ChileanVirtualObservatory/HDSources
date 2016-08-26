@@ -62,8 +62,15 @@
 
 
 ### Session Worklog [19/08/2016]
-- create an uniform grid of points on pixels below of the RMS value, and join them with the concetrated points inside the RMS value.
+- create an uniform grid of points on pixels below of the RMS value, and join them with the concetrated points over the RMS value.
 - implement compactly support guassian, with $5\sigma$ as effective support.
+- 
+
+### Session Worklog [26/08/2016]
+- debug c not square approach.
+- measure the residual and solution (entropy, variance, etc).
+- test with another fit.
+- analize the effiency of compact support implementation.
 - 
 
 
