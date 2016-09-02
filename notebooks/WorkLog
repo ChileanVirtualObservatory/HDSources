@@ -50,15 +50,9 @@
 - theoretical analysis of action radio for gaussian functions: x^p e^(-x)
 
 
-### Between sessions Worklog
-- 
-
-
 ### Session Worklog [5/08/2016]
 - gaussclump to find peaks as preprocessing
 - repeat points to generate weights
-
-### Between sessions Worklog
 
 
 ### Session Worklog [19/08/2016]
@@ -71,7 +65,12 @@
 - measure the residual and solution (entropy, variance, etc).
 - test with another fit.
 - analize the effiency of compact support implementation.
-- 
+
+
+### Session Worklog [1/09/2016]
+- make scatter plot with C and sigma² values (heat map scatter plot).
+- deterministic way of computing the points (deterministic kmeans).
+- improve efficiency to add the efects of derivatives.
 
 
 
