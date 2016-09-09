@@ -71,6 +71,7 @@
 - make scatter plot with C and sigma² values (heat map scatter plot).
 - deterministic way of computing the points (deterministic kmeans).
 - improve efficiency to add the efects of derivatives.
+- mixed solver method
 
 
 
