@@ -74,6 +74,14 @@
 - mixed solver method
 
 
+### Session worklog [9/09/2016]
+- plot initial guess variance, entropy and rms
+- compact_support fixed
+- keep base_level=0 and base_level=rms for now (base_level=0 default)
+- write hypothesis we are taking til now
+- try 2 pass version: EL -> interpolation of the approximation
+- try M100 with 2D and 3D
+
 
 ### Random ideas:
 * Better way to update phi_x matrices: e^{x^2/\sigma^2} ^= (sigma^2 / sigma0^2)
