@@ -1,0 +1,8 @@
+notebooks/.ipynb_checkpoints
+
+#trash
+*.py~
+*.py.un~
+*.pyc
+*.un~
+
