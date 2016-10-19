@@ -1,0 +1,598 @@
+import numpy as np
+import numexpr as ne
+
+
+"""
+General Psi penalizing function (applicable in both cases)
+"""
+def psi(x, lamb=1.):
+    x = lamb*x
+    ret = np.empty(x.shape)
+    mask0 = x<=0.
+    mask1 = x>=1.
+    mask01 = np.logical_and(np.logical_not(mask0),np.logical_not(mask1))
+    ret[mask0] = 0.
+    ret[mask1] = 1.
+    #evaluation on 0-1
+    x = x[mask01]
+    ret[mask01] = ne.evaluate('10*x**3 - 15*x**4 + 6*x**5')
+    return ret
+
+
+def d1psi(x, lamb=1.):
+    x = lamb*x
+    ret = np.empty(x.shape)
+    mask0 = x<=0.
+    mask1 = x>=1.
+    mask01 = np.logical_and(np.logical_not(mask0),np.logical_not(mask1))
+    ret[mask0] = 0.
+    ret[mask1] = 0.
+    #evaluation on 0-1
+    x = x[mask01]
+    ret[mask01] = ne.evaluate('30*x**2 - 60*x**3 + 30*x**4')
+    return lamb*ret
+
+
+def d2psi(x, lamb=1.):
+    x = lamb*x
+    ret = np.empty(x.shape)
+    mask0 = x<=0.
+    mask1 = x>=1.
+    mask01 = np.logical_and(np.logical_not(mask0),np.logical_not(mask1))
+    ret[mask0] = 0.
+    ret[mask1] = 0.
+    #evaluation on 0-1
+    x = x[mask01]
+    ret[mask01] = ne.evaluate('60*x - 180*x**2 + 120*x**3')
+    return (lamb**2)*ret
+
+
+
+
+"""
+RBF (Gaussian) functions and its derivatives
+"""
+
+#minimal broadening of gaussians
+minsig = 0.001
+
+def phi(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('exp(-(x**2+y**2)/(2*(sig0**2+sig**2)))')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
+    return retval
+
+
+def phix(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * x')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+
+def phiy(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * y')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+
+#same as phiyx
+def phixy(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x*y)')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+
+def phixx(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x**2 - sig0**2 - sig**2)')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+
+def phiyy(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (y**2 - sig0**2 - sig**2)')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+
+
+"""
+Euler-Lagrange class definition
+"""
+
+class ELFunc():
+    def __init__(self, f, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
+                 a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, compact_supp=False):
+        f0 = np.array([f(xe[i],ye[i]) for i in range(len(xe))]).ravel()
+        fb = np.array([f(xb[i],yb[i]) for i in range(len(xb))]).ravel()
+        len_f0 = len(f0)
+        len_c0 = len(c0)
+        len_sig0 = len(sig0)
+        Ne = len(xe)
+        Nc = len(xc)
+        Nb = len(xb)
+
+        """ 
+        Computing distance matrices
+        """
+        #distance matrices
+        Dx = np.empty((Ne,Nc))
+        Dy = np.empty((Ne,Nc))
+        for k in range(Ne):
+            Dx[k,:] = xe[k]-xc
+            Dy[k,:] = ye[k]-yc
+        #distance matrices for boundary points
+        Dxb = np.empty((Nb,Nc))
+        Dyb = np.empty((Nb,Nc))
+        for k in range(Nb):
+            Dxb[k,:] = xb[k]-xc
+            Dyb[k,:] = yb[k]-yc
+            
+        """
+        Computing Phi matrices
+        """
+        if compact_supp:
+            phi_m = phi(Dx, Dy, sig0.reshape(1,-1))
+            if b!=0.:
+                phix_m = phix(Dx, Dy, sig0.reshape(1,-1))
+                phiy_m = phiy(Dx, Dy, sig0.reshape(1,-1))
+                phixx_m = phixx(Dx, Dy, sig0.reshape(1,-1))
+                phixy_m = phixy(Dx, Dy, sig0.reshape(1,-1))
+                phiyy_m = phiyy(Dx, Dy, sig0.reshape(1,-1))
+        else:
+            phi_m = phi(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+            if b!=0.:
+                phix_m = phix(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+                phiy_m = phiy(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+                phixx_m = phixx(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+                phixy_m = phixy(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+                phiyy_m = phiyy(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+
+        
+        """
+        Storing important atributes
+        """
+        self.f0 = f0
+        self.fb = fb
+        self.xe = xe; self.ye = ye
+        self.xc = xc; self.yc = yc
+        self.xb = xb; self.yb = yb
+        self.Dx = Dx; self.Dxb = Dxb
+        self.Dy = Dy; self.Dyb = Dyb
+        self.phi_m = phi_m
+        if b!=0.:
+            self.phix_m = phix_m
+            self.phiy_m = phiy_m
+            self.phixx_m = phixx_m
+            self.phiyy_m = phiyy_m
+            self.phixy_m = phixy_m
+        self.c = c0
+        self.sig = sig0
+        self.d1psi1 = d1psi1
+        self.d1psi2 = d1psi2
+        self.d2psi2 = d2psi2
+        self.a = a
+        self.b = b
+        self.lamb1 = lamb1
+        self.lamb2 = lamb2
+        self.base_level = base_level
+        self.square_c = square_c
+        self.compact_supp = compact_supp
+        
+    def set_c(self, c):
+        self.c = c
+
+    def set_sig(self, sig):
+        self.sig = sig
+        """
+        Re-computing Phi matrices
+        """
+        if self.compact_supp:
+            self.phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1))
+            if self.b!=0.:
+                self.phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1))
+                self.phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1))
+                self.phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1))
+                self.phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1))
+                self.phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1))
+        else:
+            self.phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+            if self.b!=0.:
+                self.phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                self.phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                self.phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                self.phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                self.phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+
+    
+    def F(self, X):
+        N = len(X)/2
+        if self.square_c: c = X[0:N]**2
+        else: c = X[0:N]
+        sig = X[N:]
+        
+        """
+        Computing the Phi-matrices
+        """
+        if self.compact_supp:
+            phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1))
+            if self.b!=0.:
+                phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1))
+                phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1))
+                phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1))
+                phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1))
+                phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1))
+        else:
+            phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+            if self.b!=0.:
+                phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+
+        
+        """
+        Computing u, ux, uy, ...
+        """
+        u = np.dot(phi_m, c) + self.base_level
+        if self.b!=0.:
+            ux = np.dot(phix_m, c)
+            uy = np.dot(phiy_m, c)
+            uxx = np.dot(phixx_m, c)
+            uyy = np.dot(phiyy_m, c)
+            uxy = np.dot(phixy_m, c)
+        
+        """
+        Computing the EL equation
+        """
+        if self.b!=0.:
+            el = 2.*(u-self.f0) + \
+                self.a*self.d1psi1(u-self.f0, self.lamb1) - \
+                2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + \
+                          self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))
+        else: 
+            el = 2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
+        
+        """
+        Boundary conditions (thresh must be added)
+        """
+        bc = np.dot(phi(self.Dxb, self.Dyb, sig.reshape(1,-1)), c) + self.base_level - self.fb
+        return np.concatenate([el,bc])
+    
+    def F1(self, c):
+        if self.square_c: c = c**2
+
+        """
+        Computing u, ux, uy, ...
+        """
+        u = np.dot(phi_m, c) + self.base_level
+        if self.b!=0.:
+            ux = np.dot(phix_m, c)
+            uy = np.dot(phiy_m, c)
+            uxx = np.dot(phixx_m, c)
+            uyy = np.dot(phiyy_m, c)
+            uxy = np.dot(phixy_m, c)
+
+        """
+        Computing the EL equation
+        """
+        if self.b!=0.:
+            el = 2.*(u-self.f0) + \
+                self.a*self.d1psi1(u-self.f0, self.lamb1) - \
+                2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + \
+                          self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))
+        else: 
+            el = 2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
+        
+        """
+        Boundary conditions
+        """
+        bc = np.dot(phi(self.Dxb, self.Dyb, self.sig.reshape(1,-1)), c) + self.base_level - self.fb
+        return np.concatenate([el,bc])
+        
+    def F2(self, sig):
+        if self.square_c: c = self.c**2
+        else: c = self.c
+
+        """
+        Computing the Phi-matrices
+        """
+        if self.compact_supp:
+            phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1))
+            if self.b!=0.:
+                phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1))
+                phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1))
+                phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1))
+                phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1))
+                phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1))
+        else:
+            phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+            if self.b!=0.:
+                phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+                phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+        
+        """
+        Computing u, ux, uy, ...
+        """
+        u = np.dot(phi_m, c) + self.base_level
+        if self.b!=0.:
+            ux = np.dot(phix_m, c)
+            uy = np.dot(phiy_m, c)
+            uxx = np.dot(phixx_m, c)
+            uyy = np.dot(phiyy_m, c)
+            uxy = np.dot(phixy_m, c)
+        
+        """
+        Computing the EL equation
+        """
+        if self.b!=0.:
+            el = 2.*(u-self.f0) + \
+                self.a*self.d1psi1(u-self.f0, self.lamb1) - \
+                2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + \
+                          self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))
+        else: 
+            el = 2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
+        
+        """
+        Boundary conditions
+        """
+        bc = np.dot(phi(self.Dxb, self.Dyb, sig.reshape(1,-1)), c) + self.base_level - self.fb
+        return np.concatenate([el,bc])
+
+
+
+"""
+Initial Guess estimation
+"""
+def estimate_initial_guess(center_points, dist_matrix, dfunc, R=0.05, minsig=0.001, method='min_dist'):
+    m = center_points.shape[0]
+    c_arr = np.empty(m, dtype=float)
+    sig_arr = np.empty(m, dtype=float)
+    
+    if method=='mean_dist':
+        f = 1./sqrt(log(2.))
+        mean_dist = np.zeros(m, dtype=float)
+        num_neigh = np.zeros(m, dtype=float)   
+        for i in range(m):
+            for j in range(m):
+                #dont take into account the same point
+                if i==j: continue
+                d = dist_matrix[i,j]
+                #dont take into account points outside R radius
+                if d>R: continue
+                num_neigh[i] += 1
+                mean_dist[i] += d
+            """
+            Key Idea: The mean distance to neighbors acurrs when the
+            gaussian function has decayed to the half
+            """
+            if num_neigh[i]==0:
+                c_arr[i] = dfunc(*center_points[i])[0]
+                sig_arr[i] = minsig
+            else:
+                mean_dist[i] /= num_neigh[i]
+                c_arr[i] = dfunc(*center_points[i])[0]/num_neigh[i]
+                #c_arr[i] = dfunc(*center_points[i])[0]*mean_dist[i]**2
+                sig_arr[i] = f*mean_dist[i]
+                
+    elif method=='min_dist':
+        min_dist = np.inf*np.ones(m, dtype=float)
+        num_neigh = np.zeros(m, dtype=float)
+        #first we find the distance to the nearest neighbor
+        for i in range(m):
+            for j in range(m):
+                #dont take into account the same point
+                if i==j: continue
+                d = dist_matrix[i,j]
+                if d<min_dist[i]: min_dist[i] = d
+        #second, we find the number of neighbors on the neighborhood
+        for i in range(m):
+            for j in range(m):
+                #dont take into account the same point
+                if i==j: continue
+                d = dist_matrix[i,j]
+                if d > 3*min_dist[i]: continue
+                num_neigh[i] += 1
+            """
+            some explanation here
+            """
+            if num_neigh[i]==0:
+                c_arr[i] = dfunc(*center_points[i])[0]
+                sig_arr[i] = minsig
+            else:
+                c_arr[i] = dfunc(*center_points[i])[0]/(num_neigh[i]+1)
+                sig_arr[i] = min_dist[i] 
+    return (c_arr,sig_arr)
+
+
+"""
+Euler-Lagrange instansiation solver
+"""
+
+### ADD VERBOSE LEVEL
+
+def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0., 
+              square_c=True, compact_supp=False, step_iter=2000, max_iter=20000):
+#     if method=='exact':
+#         sol = sp.optimize.root(elf.F, np.concatenate([elf.c, elf.sig]), method='lm', options={'maxiter':2000})
+#         opt_c = sol.x[0:Nc]
+#         opt_sig = sol.x[Nc:]
+#         delta_c = np.linalg.norm(opt_c-elf.c)
+#         delta_sig = np.linalg.norm(opt_sig-elf.sig)
+#         var,entr,rms = plot_sol(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
+#                  square_c=square_c, compact_supp=compact_supp)
+#         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
+#         params_distribution_plot(elf.c, elf.sig, square_c=square_c)
+#         print('Variation on c={0}'.format(delta_c))
+#         print('Variation on sig={0}'.format(delta_sig))
+#         print('\nsuccess: {0}'.format(sol['success']))
+#         print('\nstatus: {0}'.format(sol['status']))
+#         print('\nmessage: {0}'.format(sol['message']))
+#         #print('\nopt_c_squared:\n {0}'.format(opt_c**2))
+#         #print('\nopt_sig:\n {0}'.format(opt_sig))
+#         print('-------------------------------------------------------------------')
+        
+    if method=='exact':
+        residual_variance = []
+        residual_entropy = []
+        residual_rms = []
+        iter_list = range(step_iter, max_iter+1, step_iter)
+        
+        for it in iter_list:
+            print('\n'+'#'*120)
+            print('Results after {0} iterations'.format(it))
+            print('#'*120)
+            # lm optimization
+            sol = sp.optimize.root(elf.F, np.concatenate([elf.c, elf.sig]), method='lm', options={'maxiter':step_iter})
+            opt_c = sol.x[0:Nc]
+            opt_sig = sol.x[Nc:]
+            
+            # variation of c and sig
+            delta_c = np.linalg.norm(opt_c-elf.c)
+            delta_sig = np.linalg.norm(opt_sig-elf.sig)
+            
+            # update of best parameters
+            elf.set_c(opt_c)
+            elf.set_sig(opt_sig)
+            
+            # residual stats
+            var,entr,rms = compute_residual_stats(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
+                     square_c=square_c, compact_supp=compact_supp)
+            
+            # setting the new current solution
+            elf.set_c(opt_c)
+            elf.set_sig(opt_sig)
+            
+            #appending residual variance, entropy and rms
+            residual_variance.append(var)
+            residual_entropy.append(entr)
+            residual_rms.append(rms)
+            
+            print('Variation on c = {0}'.format(delta_c))
+            print('variation on sig = {0}'.format(delta_sig))
+            print('\nsuccess: {0}'.format(sol['success']))
+            print('\nstatus: {0}'.format(sol['status']))
+            print('\nmessage: {0}'.format(sol['message']))
+            print('\nnfev: {0}'.format(sol['nfev']))
+            if sol['success']: break
+        
+        print('\n \n' + '#'*120)    
+        print('FINAL RESULTS:')
+        print('#'*120)
+        
+        # plots generation
+        plot_sol(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
+                 square_c=square_c, compact_supp=compact_supp)
+        params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
+        params_distribution_plot(elf.c, elf.sig, square_c=square_c)
+        residual_plot(residual_variance, residual_entropy, residual_rms, iter_list[0:len(residual_rms)])
+    
+    if method=='mixed':
+        print('\n'+'#'*120)
+        print('Iteration: 0  -  Optimization on both c and sig parameters')
+        print('#'*120)
+        sol = sp.optimize.root(elf.F, np.concatenate([elf.c, elf.sig]), method='lm', options={'maxiter':10000}, callback=calllback)
+        opt_c = sol.x[0:Nc]
+        opt_sig = sol.x[Nc:]
+        delta_c = np.linalg.norm(opt_c-elf.c)
+        delta_sig = np.linalg.norm(opt_sig-elf.sig)
+        elf.set_c(opt_c)
+        elf.set_sig(opt_sig)
+        var,entr,rms = plot_sol(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+                            square_c=square_c, compact_supp=compact_supp)
+        params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
+        params_distribution_plot(elf.c, elf.sig, square_c=square_c)
+
+        print('Variation on c={0}'.format(delta_c))
+        print('Variation on sig={0}'.format(delta_sig))
+        print('\nmessage: {0}'.format(sol['message']))
+        print('\nsuccess: {0}'.format(sol['success']))
+    
+    if method=='iterative' or method=='mixed':
+        residual_variance = []
+        residual_entropy = []
+        residual_rms = []
+        
+        #print('\n'+'#'*120)
+        #print('Initial Guess')
+        #print('#'*120)
+        #var,entr,rms = plot_sol(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, square_c=square_c)
+        #params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
+        #params_distribution_plot(elf.c, elf.sig, square_c=square_c)
+        #residual_variance.append(var)
+        #residual_entropy.append(entr)
+        #residual_rms.append(rms)
+        
+        for it in range(n_iter):
+            print('\n'+'#'*120)
+            print('Iteration: {0}  -  Optimization on c parameter'.format(it))
+            print('#'*120)
+            #solve for c
+            sol = sp.optimize.root(elf.F1, elf.c, method='lm', options={'maxiter':10000})
+            opt_c = sol.x
+            delta_c = np.linalg.norm(opt_c-elf.c)
+            elf.set_c(opt_c)
+            #title = 'Best solution at iter={0} and improved c'.format(i)
+            var,entr,rms = plot_sol(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+                                    square_c=square_c, compact_supp=compact_supp)
+            params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
+            params_distribution_plot(elf.c, elf.sig, square_c=square_c)
+            print('Variation on c={0}'.format(delta_c))
+            print('\nnfev: {0}'.format(sol['nfev']))
+            print('\nmessage: {0}'.format(sol['message']))
+            print('\nsuccess: {0}'.format(sol['success']))
+            if square_c:
+                print('\nmax c and position: {0} and {1}'.format(np.max(opt_c**2), np.argmax(opt_c**2)))
+            else:
+                print('\nmax c and position: {0} and {1}'.format(np.max(opt_c), np.argmax(opt_c)))  
+            
+            #appending residual variance and entropy
+            residual_variance.append(var)
+            residual_entropy.append(entr)
+            residual_rms.append(rms)
+
+            print('\n'+'#'*120)
+            print('Iteration: {0}  -  Optimization on sig parameter'.format(it))
+            print('#'*120)
+            #solve for sig
+            sol = sp.optimize.root(elf.F2, elf.sig, method='lm', options={'maxiter':10000})
+            opt_sig = sol.x
+            delta_sig = np.linalg.norm(opt_sig-elf.sig)
+            elf.set_sig(opt_sig)
+            #title = 'Best solution at iter={0} and improved sig'.format(i)
+            var,entr,rms = plot_sol(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+                                    square_c=square_c, compact_supp=compact_supp)
+            params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
+            params_distribution_plot(elf.c, elf.sig, square_c=square_c)
+            
+            print('Variation on sig={0}'.format(delta_sig))
+            print('\nnfev: {0}'.format(sol['nfev']))
+            print('\nmessage: {0}'.format(sol['message']))
+            print('\nsuccess: {0}'.format(sol['success']))
+            print('\nmax sig and position: {0} and {1}'.format(np.max(opt_sig**2), np.argmax(opt_sig**2)))
+            print('\nmin sig and position: {0} and {1}'.format(np.min(opt_sig**2), np.argmin(opt_sig**2)))
+            print('-------------------------------------------------------------')
+            #appending residual variance and entropy
+            residual_variance.append(var)
+            residual_entropy.append(entr)
+            residual_rms.append(rms)
+
+        print('\n \n' + '#'*120)    
+        print('SOME FINAL RESULTS:')
+        print('#'*120)
+        plt.figure(figsize=(12,5))
+        plt.subplot(1,3,1)
+        plt.xlim(-0.2, (2.*n_iter-1)+0.2)
+        plt.plot(range(2*n_iter), residual_rms, 'go-')
+        plt.title('Residual RMS')        
+        plt.subplot(1,3,2)
+        plt.xlim(-0.2, (2.*n_iter-1)+0.2)
+        plt.plot(range(2*n_iter), residual_variance, 'bo-')
+        plt.title('Residual variance')
+        plt.subplot(1,3,3)
+        plt.xlim(-0.2, (2.*n_iter-1)+0.2)
+        plt.plot(range(2*n_iter), residual_entropy, 'ro-')
+        plt.title('Residual entropy')
+        plt.show()
