@@ -16,8 +16,11 @@ def estimate_entropy(data):
     Computes Entropy of N-dimensional numpy array
     """
 
-    ml_data = matlab.double(data.tolist())
-    return eng.entropy(ml_data, nargout=1)
+    # estimation of probabilities
+    p = np.histogram(data.ravel(), bins=256, density=False)[0].astype(float)
+    p /= p.sum()
+    # computation of entropy 
+    return -np.sum(p * np.log2(p))
 
 
 def estimate_variance(data):
