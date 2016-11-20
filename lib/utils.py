@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.ma as ma
 import scipy as sp
 
 
@@ -7,7 +8,10 @@ def estimate_rms(data):
     Computes RMS value of N-dimensional numpy array
     """
 
-    ret = np.sum(data*data) / np.size(data)
+    if isinstance(data, ma.MaskedArray):
+        ret = np.sum(data*data) / (np.size(data) - np.sum(data.mask)) 
+    else: 
+        ret = np.sum(data*data) / np.size(data)
     return np.sqrt(ret)
 
 
@@ -18,7 +22,8 @@ def estimate_entropy(data):
 
     # estimation of probabilities
     p = np.histogram(data.ravel(), bins=256, density=False)[0].astype(float)
-    p /= p.sum()
+    # little fix for freq=0 cases
+    p = (p+1.)/(p.sum()+256.)
     # computation of entropy 
     return -np.sum(p * np.log2(p))
 
@@ -63,3 +68,21 @@ def compute_residual_stats(dfunc, c, sig, xc, yc, base_level=0., square_c=True, 
     return (estimate_variance(residual), 
             estimate_entropy(residual),
             estimate_rms(residual))
+
+
+def build_dist_matrix(points):
+    """
+    Builds a distance matrix from points array.
+    It returns a (n_points, n_points) distance matrix. 
+    
+    points: NumPy array with shape (n_points, 2) 
+    """
+    xp = points[:,0]
+    yp = points[:,1]
+    N = points.shape[0]
+    Dx = np.empty((N,N))
+    Dy = np.empty((N,N))
+    for k in range(Nc):
+        Dx[k,:] = xp[k]-xp
+        Dy[k,:] = yp[k]-yp
+    return np.sqrt(Dx**2+Dy**2)

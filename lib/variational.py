@@ -1,5 +1,11 @@
+import scipy
+import scipy as sp
 import numpy as np
 import numexpr as ne
+import matplotlib.pyplot as plt
+from graph import  solution_plot, params_plot, params_distribution_plot, residual_plot
+from utils import compute_residual_stats
+from graph import *
 
 
 """
@@ -18,7 +24,6 @@ def psi(x, lamb=1.):
     ret[mask01] = ne.evaluate('10*x**3 - 15*x**4 + 6*x**5')
     return ret
 
-
 def d1psi(x, lamb=1.):
     x = lamb*x
     ret = np.empty(x.shape)
@@ -31,7 +36,6 @@ def d1psi(x, lamb=1.):
     x = x[mask01]
     ret[mask01] = ne.evaluate('30*x**2 - 60*x**3 + 30*x**4')
     return lamb*ret
-
 
 def d2psi(x, lamb=1.):
     x = lamb*x
@@ -47,8 +51,6 @@ def d2psi(x, lamb=1.):
     return (lamb**2)*ret
 
 
-
-
 """
 RBF (Gaussian) functions and its derivatives
 """
@@ -61,18 +63,15 @@ def phi(x, y, sig, sig0=minsig, supp=5.):
     if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
     return retval
 
-
 def phix(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * x')
     if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
     return retval
 
-
 def phiy(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * y')
     if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
     return retval
-
 
 #same as phiyx
 def phixy(x, y, sig, sig0=minsig, supp=5.):
@@ -80,12 +79,10 @@ def phixy(x, y, sig, sig0=minsig, supp=5.):
     if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
     return retval
 
-
 def phixx(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x**2 - sig0**2 - sig**2)')
     if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
     return retval
-
 
 def phiyy(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (y**2 - sig0**2 - sig**2)')
@@ -97,7 +94,6 @@ def phiyy(x, y, sig, sig0=minsig, supp=5.):
 """
 Euler-Lagrange class definition
 """
-
 class ELFunc():
     def __init__(self, f, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
                  a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, compact_supp=False):
@@ -253,7 +249,7 @@ class ELFunc():
             el = 2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
         
         """
-        Boundary conditions (thresh must be added)
+        Boundary conditions (threshold must be added)
         """
         bc = np.dot(phi(self.Dxb, self.Dyb, sig.reshape(1,-1)), c) + self.base_level - self.fb
         return np.concatenate([el,bc])
@@ -342,71 +338,6 @@ class ELFunc():
         return np.concatenate([el,bc])
 
 
-
-"""
-Initial Guess estimation
-"""
-def estimate_initial_guess(center_points, dist_matrix, dfunc, R=0.05, minsig=0.001, method='min_dist'):
-    m = center_points.shape[0]
-    c_arr = np.empty(m, dtype=float)
-    sig_arr = np.empty(m, dtype=float)
-    
-    if method=='mean_dist':
-        f = 1./sqrt(log(2.))
-        mean_dist = np.zeros(m, dtype=float)
-        num_neigh = np.zeros(m, dtype=float)   
-        for i in range(m):
-            for j in range(m):
-                #dont take into account the same point
-                if i==j: continue
-                d = dist_matrix[i,j]
-                #dont take into account points outside R radius
-                if d>R: continue
-                num_neigh[i] += 1
-                mean_dist[i] += d
-            """
-            Key Idea: The mean distance to neighbors acurrs when the
-            gaussian function has decayed to the half
-            """
-            if num_neigh[i]==0:
-                c_arr[i] = dfunc(*center_points[i])[0]
-                sig_arr[i] = minsig
-            else:
-                mean_dist[i] /= num_neigh[i]
-                c_arr[i] = dfunc(*center_points[i])[0]/num_neigh[i]
-                #c_arr[i] = dfunc(*center_points[i])[0]*mean_dist[i]**2
-                sig_arr[i] = f*mean_dist[i]
-                
-    elif method=='min_dist':
-        min_dist = np.inf*np.ones(m, dtype=float)
-        num_neigh = np.zeros(m, dtype=float)
-        #first we find the distance to the nearest neighbor
-        for i in range(m):
-            for j in range(m):
-                #dont take into account the same point
-                if i==j: continue
-                d = dist_matrix[i,j]
-                if d<min_dist[i]: min_dist[i] = d
-        #second, we find the number of neighbors on the neighborhood
-        for i in range(m):
-            for j in range(m):
-                #dont take into account the same point
-                if i==j: continue
-                d = dist_matrix[i,j]
-                if d > 3*min_dist[i]: continue
-                num_neigh[i] += 1
-            """
-            some explanation here
-            """
-            if num_neigh[i]==0:
-                c_arr[i] = dfunc(*center_points[i])[0]
-                sig_arr[i] = minsig
-            else:
-                c_arr[i] = dfunc(*center_points[i])[0]/(num_neigh[i]+1)
-                sig_arr[i] = min_dist[i] 
-    return (c_arr,sig_arr)
-
-
 """
 Euler-Lagrange instansiation solver
 """
@@ -414,26 +345,7 @@ Euler-Lagrange instansiation solver
 ### ADD VERBOSE LEVEL
 
 def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0., 
-              square_c=True, compact_supp=False, step_iter=2000, max_iter=20000):
-#     if method=='exact':
-#         sol = sp.optimize.root(elf.F, np.concatenate([elf.c, elf.sig]), method='lm', options={'maxiter':2000})
-#         opt_c = sol.x[0:Nc]
-#         opt_sig = sol.x[Nc:]
-#         delta_c = np.linalg.norm(opt_c-elf.c)
-#         delta_sig = np.linalg.norm(opt_sig-elf.sig)
-#         var,entr,rms = plot_sol(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
-#                  square_c=square_c, compact_supp=compact_supp)
-#         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
-#         params_distribution_plot(elf.c, elf.sig, square_c=square_c)
-#         print('Variation on c={0}'.format(delta_c))
-#         print('Variation on sig={0}'.format(delta_sig))
-#         print('\nsuccess: {0}'.format(sol['success']))
-#         print('\nstatus: {0}'.format(sol['status']))
-#         print('\nmessage: {0}'.format(sol['message']))
-#         #print('\nopt_c_squared:\n {0}'.format(opt_c**2))
-#         #print('\nopt_sig:\n {0}'.format(opt_sig))
-#         print('-------------------------------------------------------------------')
-        
+              square_c=True, compact_supp=False, step_iter=2000, max_iter=20000):        
     if method=='exact':
         residual_variance = []
         residual_entropy = []
@@ -483,7 +395,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         print('#'*120)
         
         # plots generation
-        plot_sol(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
+        solution_plot(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
                  square_c=square_c, compact_supp=compact_supp)
         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
         params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -500,7 +412,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         delta_sig = np.linalg.norm(opt_sig-elf.sig)
         elf.set_c(opt_c)
         elf.set_sig(opt_sig)
-        var,entr,rms = plot_sol(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+        var,entr,rms = solution_plot(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
                             square_c=square_c, compact_supp=compact_supp)
         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
         params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -518,7 +430,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         #print('\n'+'#'*120)
         #print('Initial Guess')
         #print('#'*120)
-        #var,entr,rms = plot_sol(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, square_c=square_c)
+        #var,entr,rms = solution_plot(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, square_c=square_c)
         #params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
         #params_distribution_plot(elf.c, elf.sig, square_c=square_c)
         #residual_variance.append(var)
@@ -535,7 +447,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             delta_c = np.linalg.norm(opt_c-elf.c)
             elf.set_c(opt_c)
             #title = 'Best solution at iter={0} and improved c'.format(i)
-            var,entr,rms = plot_sol(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+            var,entr,rms = solution_plot(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
                                     square_c=square_c, compact_supp=compact_supp)
             params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
             params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -562,7 +474,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             delta_sig = np.linalg.norm(opt_sig-elf.sig)
             elf.set_sig(opt_sig)
             #title = 'Best solution at iter={0} and improved sig'.format(i)
-            var,entr,rms = plot_sol(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+            var,entr,rms = solution_plot(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
                                     square_c=square_c, compact_supp=compact_supp)
             params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
             params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -574,7 +486,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             print('\nmax sig and position: {0} and {1}'.format(np.max(opt_sig**2), np.argmax(opt_sig**2)))
             print('\nmin sig and position: {0} and {1}'.format(np.min(opt_sig**2), np.argmin(opt_sig**2)))
             print('-------------------------------------------------------------')
-            #appending residual variance and entropy
+            #appending residual variance, entropy and RMS
             residual_variance.append(var)
             residual_entropy.append(entr)
             residual_rms.append(rms)
