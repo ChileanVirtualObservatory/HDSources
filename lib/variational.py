@@ -305,7 +305,10 @@ Euler-Lagrange instansiation solver
 ### ADD VERBOSE LEVEL
 
 def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0., 
-              square_c=True, compact_supp=False, step_iter=2000, max_iter=100000):        
+              square_c=True, compact_supp=False, step_iter=2000, max_iter=100000):
+    # number of centers/parameters
+    Nc = len(elf.xc)
+
     if method=='exact':
         residual_variance = []
         residual_entropy = []
@@ -330,7 +333,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             elf.set_sig(opt_sig)
             
             # residual stats
-            var,entr,rms = compute_residual_stats(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
+            var,entr,rms = compute_residual_stats(elf.dfunc, opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
                      square_c=square_c, compact_supp=compact_supp)
             
             # setting the new current solution
