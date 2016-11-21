@@ -1,4 +1,4 @@
-import numpy as numpy
+import numpy as np
 from utils import build_dist_matrix
 
 

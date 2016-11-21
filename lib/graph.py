@@ -2,9 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from utils import phi
 
 
-def plotter(c, sig, xc, resolution=10, title=None):
+def plotter(dfunc, c, sig, xc, resolution=10, title=None):
     """
     Helper function to visualize the quality of the solution
     """
@@ -17,14 +18,14 @@ def plotter(c, sig, xc, resolution=10, title=None):
     u = np.dot(phi_m, c)
     plt.figure(figsize=(10,6))
     plt.plot(_xe, u, 'r-', label='Solution')
-    plt.plot(x_, f(x_), 'b--', label='Data')
-    plt.plot(xe, f(xe), 'go', label='Evaluation points')
+    plt.plot(x_, dfunc(x_), 'b--', label='Data')
+    plt.plot(xe, dfunc(xe), 'go', label='Evaluation points')
     plt.title(title)
     plt.legend(bbox_to_anchor=(1.3, 1.0))
     plt.show()
 
 
-def solution_plot(c, sig, xc, yc, base_level=0., square_c=True, resolution=5, title=None, compact_supp=True):
+def solution_plot(dfunc, c, sig, xc, yc, base_level=0., square_c=True, resolution=5, title=None, compact_supp=True):
     _xe = np.linspace(0., 1., 41*resolution)[1:-1]
     _ye = np.linspace(0., 1., 41*resolution)[1:-1]
     len_xe = len(_xe); len_ye = len(_ye)
@@ -57,7 +58,7 @@ def solution_plot(c, sig, xc, yc, base_level=0., square_c=True, resolution=5, ti
     plt.figure(figsize=(18,12))
     plt.subplot(1,3,1)
     ax = plt.gca()
-    im = ax.imshow(f(_xe, _ye))
+    im = ax.imshow(dfunc(_xe, _ye))
     #plt.imshow(np.log10(np.abs(u)+1e-10))
     plt.title('Original')
     plt.axis('off')
@@ -83,7 +84,7 @@ def solution_plot(c, sig, xc, yc, base_level=0., square_c=True, resolution=5, ti
     """
     plt.subplot(1,3,3)
     ax = plt.gca()
-    im = ax.imshow(f(_xe, _ye)-u)
+    im = ax.imshow(dfunc(_xe, _ye)-u)
     #plt.imshow(np.log10(np.abs(u)+1e-10))
     plt.title('Residual')
     plt.axis('off')
@@ -91,20 +92,6 @@ def solution_plot(c, sig, xc, yc, base_level=0., square_c=True, resolution=5, ti
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     plt.show()
-    
-    #X,Y = np.meshgrid(_xe, _ye,sparse=True)
-    #fig = plt.figure(figsize=(15,8))
-    #ax = fig.add_subplot(111, projection='3d')
-    #ax.plot_surface(X, Y, u, linewidth=0.1, cmap='jet')
-    #ax.set_xlabel('x')
-    #ax.set_ylabel('y')
-    #ax.set_zlabel('I')
-    #plt.title('Solution')
-    #plt.show()
-    residual = f(_xe, _ye)-u
-    return (estimate_variance(residual), 
-            estimate_entropy(residual),
-            estimate_rms(residual))
 
 
 def params_plot(c, sig, xc, yc, square_c=True, remove_outlier=True):

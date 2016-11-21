@@ -4,8 +4,7 @@ import numpy as np
 import numexpr as ne
 import matplotlib.pyplot as plt
 from graph import  solution_plot, params_plot, params_distribution_plot, residual_plot
-from utils import compute_residual_stats
-from graph import *
+from utils import *
 
 
 """
@@ -52,53 +51,13 @@ def d2psi(x, lamb=1.):
 
 
 """
-RBF (Gaussian) functions and its derivatives
-"""
-
-#minimal broadening of gaussians
-minsig = 0.001
-
-def phi(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('exp(-(x**2+y**2)/(2*(sig0**2+sig**2)))')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
-    return retval
-
-def phix(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * x')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
-    return retval
-
-def phiy(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * y')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
-    return retval
-
-#same as phiyx
-def phixy(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x*y)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
-    return retval
-
-def phixx(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x**2 - sig0**2 - sig**2)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
-    return retval
-
-def phiyy(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (y**2 - sig0**2 - sig**2)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
-    return retval
-
-
-
-"""
 Euler-Lagrange class definition
 """
 class ELFunc():
-    def __init__(self, f, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
+    def __init__(self, dfunc, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
                  a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, compact_supp=False):
-        f0 = np.array([f(xe[i],ye[i]) for i in range(len(xe))]).ravel()
-        fb = np.array([f(xb[i],yb[i]) for i in range(len(xb))]).ravel()
+        f0 = np.array([dfunc(xe[i],ye[i]) for i in range(len(xe))]).ravel()
+        fb = np.array([dfunc(xb[i],yb[i]) for i in range(len(xb))]).ravel()
         len_f0 = len(f0)
         len_c0 = len(c0)
         len_sig0 = len(sig0)
@@ -146,6 +105,7 @@ class ELFunc():
         """
         Storing important atributes
         """
+        self.dfunc = dfunc
         self.f0 = f0
         self.fb = fb
         self.xe = xe; self.ye = ye
@@ -345,7 +305,7 @@ Euler-Lagrange instansiation solver
 ### ADD VERBOSE LEVEL
 
 def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0., 
-              square_c=True, compact_supp=False, step_iter=2000, max_iter=20000):        
+              square_c=True, compact_supp=False, step_iter=2000, max_iter=100000):        
     if method=='exact':
         residual_variance = []
         residual_entropy = []
@@ -353,9 +313,9 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         iter_list = range(step_iter, max_iter+1, step_iter)
         
         for it in iter_list:
-            print('\n'+'#'*120)
+            print('\n'+'#'*90)
             print('Results after {0} iterations'.format(it))
-            print('#'*120)
+            print('#'*90)
             # lm optimization
             sol = sp.optimize.root(elf.F, np.concatenate([elf.c, elf.sig]), method='lm', options={'maxiter':step_iter})
             opt_c = sol.x[0:Nc]
@@ -377,7 +337,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             elf.set_c(opt_c)
             elf.set_sig(opt_sig)
             
-            #appending residual variance, entropy and rms
+            # appending residual variance, entropy and rms
             residual_variance.append(var)
             residual_entropy.append(entr)
             residual_rms.append(rms)
@@ -390,21 +350,21 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             print('\nnfev: {0}'.format(sol['nfev']))
             if sol['success']: break
         
-        print('\n \n' + '#'*120)    
+        print('\n \n' + '#'*90)    
         print('FINAL RESULTS:')
-        print('#'*120)
+        print('#'*90)
         
         # plots generation
-        solution_plot(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
+        solution_plot(elf.dfunc, opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
                  square_c=square_c, compact_supp=compact_supp)
         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
         params_distribution_plot(elf.c, elf.sig, square_c=square_c)
         residual_plot(residual_variance, residual_entropy, residual_rms, iter_list[0:len(residual_rms)])
     
     if method=='mixed':
-        print('\n'+'#'*120)
+        print('\n'+'#'*90)
         print('Iteration: 0  -  Optimization on both c and sig parameters')
-        print('#'*120)
+        print('#'*90)
         sol = sp.optimize.root(elf.F, np.concatenate([elf.c, elf.sig]), method='lm', options={'maxiter':10000}, callback=calllback)
         opt_c = sol.x[0:Nc]
         opt_sig = sol.x[Nc:]
@@ -412,7 +372,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         delta_sig = np.linalg.norm(opt_sig-elf.sig)
         elf.set_c(opt_c)
         elf.set_sig(opt_sig)
-        var,entr,rms = solution_plot(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+        solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
                             square_c=square_c, compact_supp=compact_supp)
         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
         params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -427,10 +387,10 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         residual_entropy = []
         residual_rms = []
         
-        #print('\n'+'#'*120)
+        #print('\n'+'#'*90)
         #print('Initial Guess')
-        #print('#'*120)
-        #var,entr,rms = solution_plot(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, square_c=square_c)
+        #print('#'*90)
+        solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, square_c=square_c)
         #params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
         #params_distribution_plot(elf.c, elf.sig, square_c=square_c)
         #residual_variance.append(var)
@@ -438,16 +398,16 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         #residual_rms.append(rms)
         
         for it in range(n_iter):
-            print('\n'+'#'*120)
+            print('\n'+'#'*90)
             print('Iteration: {0}  -  Optimization on c parameter'.format(it))
-            print('#'*120)
+            print('#'*90)
             #solve for c
             sol = sp.optimize.root(elf.F1, elf.c, method='lm', options={'maxiter':10000})
             opt_c = sol.x
             delta_c = np.linalg.norm(opt_c-elf.c)
             elf.set_c(opt_c)
             #title = 'Best solution at iter={0} and improved c'.format(i)
-            var,entr,rms = solution_plot(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+            solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
                                     square_c=square_c, compact_supp=compact_supp)
             params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
             params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -458,23 +418,27 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             if square_c:
                 print('\nmax c and position: {0} and {1}'.format(np.max(opt_c**2), np.argmax(opt_c**2)))
             else:
-                print('\nmax c and position: {0} and {1}'.format(np.max(opt_c), np.argmax(opt_c)))  
+                print('\nmax c and position: {0} and {1}'.format(np.max(opt_c), np.argmax(opt_c)))
+
+            # residual stats
+            var,entr,rms = compute_residual_stats(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
+                        square_c=square_c, compact_supp=compact_supp)
             
             #appending residual variance and entropy
             residual_variance.append(var)
             residual_entropy.append(entr)
             residual_rms.append(rms)
 
-            print('\n'+'#'*120)
+            print('\n'+'#'*90)
             print('Iteration: {0}  -  Optimization on sig parameter'.format(it))
-            print('#'*120)
+            print('#'*90)
             #solve for sig
             sol = sp.optimize.root(elf.F2, elf.sig, method='lm', options={'maxiter':10000})
             opt_sig = sol.x
             delta_sig = np.linalg.norm(opt_sig-elf.sig)
             elf.set_sig(opt_sig)
             #title = 'Best solution at iter={0} and improved sig'.format(i)
-            var,entr,rms = solution_plot(elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+            solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
                                     square_c=square_c, compact_supp=compact_supp)
             params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
             params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -486,14 +450,19 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             print('\nmax sig and position: {0} and {1}'.format(np.max(opt_sig**2), np.argmax(opt_sig**2)))
             print('\nmin sig and position: {0} and {1}'.format(np.min(opt_sig**2), np.argmin(opt_sig**2)))
             print('-------------------------------------------------------------')
+            
+            # residual stats
+            var,entr,rms = compute_residual_stats(opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
+                        square_c=square_c, compact_supp=compact_supp)
+
             #appending residual variance, entropy and RMS
             residual_variance.append(var)
             residual_entropy.append(entr)
             residual_rms.append(rms)
 
-        print('\n \n' + '#'*120)    
+        print('\n \n' + '#'*90)    
         print('SOME FINAL RESULTS:')
-        print('#'*120)
+        print('#'*90)
         plt.figure(figsize=(12,5))
         plt.subplot(1,3,1)
         plt.xlim(-0.2, (2.*n_iter-1)+0.2)

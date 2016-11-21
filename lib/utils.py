@@ -1,6 +1,48 @@
 import numpy as np
 import numpy.ma as ma
 import scipy as sp
+import numexpr as ne
+
+
+"""
+RBF (Gaussian) functions and its derivatives
+"""
+
+#minimal broadening of gaussians
+minsig = 0.001
+
+def phi(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('exp(-(x**2+y**2)/(2*(sig0**2+sig**2)))')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
+    return retval
+
+def phix(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * x')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+def phiy(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * y')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+#same as phiyx
+def phixy(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x*y)')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+def phixx(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x**2 - sig0**2 - sig**2)')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+def phiyy(x, y, sig, sig0=minsig, supp=5.):
+    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (y**2 - sig0**2 - sig**2)')
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    return retval
+
+
 
 
 def estimate_rms(data):
@@ -74,7 +116,7 @@ def build_dist_matrix(points):
     """
     Builds a distance matrix from points array.
     It returns a (n_points, n_points) distance matrix. 
-    
+
     points: NumPy array with shape (n_points, 2) 
     """
     xp = points[:,0]
@@ -82,7 +124,7 @@ def build_dist_matrix(points):
     N = points.shape[0]
     Dx = np.empty((N,N))
     Dy = np.empty((N,N))
-    for k in range(Nc):
+    for k in range(N):
         Dx[k,:] = xp[k]-xp
         Dy[k,:] = yp[k]-yp
     return np.sqrt(Dx**2+Dy**2)
