@@ -113,8 +113,8 @@ def params_plot(c, sig, xc, yc, square_c=True, remove_outlier=True):
     plt.subplot(1,2,2)
     if remove_outlier:
         # just keeping values less than 10 times the mean
-        sig_med = np.median(sig)
-        mask2 = sig < 10.*sig_med
+        sig2_med = np.median(sig**2)
+        mask2 = sig**2 < 10.*sig2_med
         sig_ = sig[mask2]
         xc_ = xc[mask2]; yc_ = yc[mask2]
     plt.title('Plot of sig^2 parameters')
@@ -129,12 +129,12 @@ def params_plot(c, sig, xc, yc, square_c=True, remove_outlier=True):
 def params_distribution_plot(c, sig, square_c=True, remove_outlier=True):
     if square_c: c = c**2
     if remove_outlier:
-        # just keeping values less than 10 times the mean
+        # just keeping values less than 10 times the median
         c_med = np.median(c)
-        sig_med = np.median(sig)
+        sig2_med = np.median(sig**2)
         mask1 = c < 10.*c_med
         c = c[mask1]
-        mask2 = sig < 10.*sig_med
+        mask2 = sig**2 < 10.*sig2_med
         sig = sig[mask2]
     plt.figure(figsize=(14,7))
     plt.subplot(1,2,1)
