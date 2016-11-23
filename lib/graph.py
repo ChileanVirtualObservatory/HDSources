@@ -58,7 +58,7 @@ def solution_plot(dfunc, c, sig, xc, yc, base_level=0., square_c=True, resolutio
     plt.figure(figsize=(18,12))
     plt.subplot(1,3,1)
     ax = plt.gca()
-    im = ax.imshow(dfunc(_xe, _ye))
+    im = ax.imshow(dfunc(_xe, _ye), vmin=0., vmax=1.)
     #plt.imshow(np.log10(np.abs(u)+1e-10))
     plt.title('Original')
     plt.axis('off')
@@ -71,7 +71,7 @@ def solution_plot(dfunc, c, sig, xc, yc, base_level=0., square_c=True, resolutio
     """
     plt.subplot(1,3,2)
     ax = plt.gca()
-    im = ax.imshow(u)
+    im = ax.imshow(u, vmin=0., vmax=1.x)
     #plt.imshow(np.log10(np.abs(u)+1e-10))
     plt.title('Solution')
     plt.axis('off')
