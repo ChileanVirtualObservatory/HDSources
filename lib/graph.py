@@ -25,9 +25,9 @@ def plotter(dfunc, c, sig, xc, resolution=10, title=None):
     plt.show()
 
 
-def solution_plot(dfunc, c, sig, xc, yc, base_level=0., square_c=True, resolution=5, title=None, compact_supp=True):
-    _xe = np.linspace(0., 1., 41*resolution)[1:-1]
-    _ye = np.linspace(0., 1., 41*resolution)[1:-1]
+def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, resolution=5, title=None, compact_supp=True):
+    _xe = np.linspace(0., 1., resolution*dims[0])[1:-1]
+    _ye = np.linspace(0., 1., resolution*dims[1])[1:-1]
     len_xe = len(_xe); len_ye = len(_ye)
     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False)
     xe = Xe.ravel(); ye = Ye.ravel()
@@ -71,7 +71,7 @@ def solution_plot(dfunc, c, sig, xc, yc, base_level=0., square_c=True, resolutio
     """
     plt.subplot(1,3,2)
     ax = plt.gca()
-    im = ax.imshow(u, vmin=0., vmax=1.x)
+    im = ax.imshow(u, vmin=0., vmax=1.)
     #plt.imshow(np.log10(np.abs(u)+1e-10))
     plt.title('Solution')
     plt.axis('off')
@@ -84,7 +84,7 @@ def solution_plot(dfunc, c, sig, xc, yc, base_level=0., square_c=True, resolutio
     """
     plt.subplot(1,3,3)
     ax = plt.gca()
-    im = ax.imshow(dfunc(_xe, _ye)-u)
+    im = ax.imshow(dfunc(_xe, _ye)-u, vmin=-0.1, vmax=0.1)
     #plt.imshow(np.log10(np.abs(u)+1e-10))
     plt.title('Residual')
     plt.axis('off')
@@ -163,32 +163,36 @@ def residual_plot(residual_variance, residual_entropy, residual_rms, iter_list):
     plt.show()
 
 
-def points_plot(data, center_points=None, collocation_points=None, boundary_points=None):
+def points_plot(data, center_points=None, collocation_points=None, boundary_points=None, title=None):
     x_scale = data.shape[0]-1
     y_scale = data.shape[1]-1
     if (center_points is not None) and (collocation_points is None):
         plt.figure(figsize=(8,8))
         plt.imshow(data)
         plt.scatter(center_points[:,0]*x_scale, center_points[:,1]*y_scale, c='r', s=5, label='center')
-        plt.title('Center points')
+        if title is not None: plt.title(title) 
+        else: plt.title('Center points')
         plt.axis('off')
     elif (center_points is None) and (collocation_points is not None):
         plt.figure(figsize=(8,8))
         plt.imshow(data)
         plt.scatter(collocation_points[:,0]*x_scale, collocation_points[:,1]*y_scale, c='g', s=5, label='collocation')
-        plt.title('Collocation points')
+        if title is not None: plt.title(title)
+        else: plt.title('Collocation points')
         plt.axis('off')
     elif (center_points is not None) and (collocation_points is not None):
         fig = plt.figure(figsize=(20,15))
         ax1 = fig.add_subplot(121)
         ax1.imshow(data)
         ax1.scatter(center_points[:,0]*x_scale, center_points[:,1]*y_scale, c='r', s=5, label='center')
-        ax1.set_title('Center points')
+        if title is not None: plt.title(title)
+        else: ax1.set_title('Center points')
         ax1.axis('off')
         ax2 = fig.add_subplot(122)
         ax2.imshow(data)
         ax2.scatter(collocation_points[:,0]*x_scale, collocation_points[:,1]*y_scale, c='g', s=5, label='collocation')
-        ax2.set_title('Collocation points')
+        if title is not None: plt.title(title)
+        else: ax2.set_title('Collocation points')
         ax2.axis('off')
     if (boundary_points is not None) and len(boundary_points[:,0])!=0:
         plt.figure(figsize=(8,8))
