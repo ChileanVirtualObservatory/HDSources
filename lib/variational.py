@@ -54,7 +54,7 @@ def d2psi(x, lamb=1.):
 Euler-Lagrange class definition
 """
 class ELFunc():
-    def __init__(self, dfunc, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
+    def __init__(self, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
                  a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, compact_supp=False):
         f0 = np.array([dfunc(xe[i],ye[i]) for i in range(len(xe))]).ravel()
         fb = np.array([dfunc(xb[i],yb[i]) for i in range(len(xb))]).ravel()
@@ -106,6 +106,7 @@ class ELFunc():
         Storing important atributes
         """
         self.dfunc = dfunc
+        self.dims = dims
         self.f0 = f0
         self.fb = fb
         self.xe = xe; self.ye = ye
@@ -358,7 +359,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         print('#'*90)
         
         # plots generation
-        solution_plot(elf.dfunc, opt_c, opt_sig, elf.xc, elf.yc, base_level=base_level, 
+        solution_plot(elf.dfunc, opt_c, opt_sig, elf.xc, elf.yc, dims=elf.dims, base_level=base_level, 
                  square_c=square_c, compact_supp=compact_supp)
         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
         params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -375,7 +376,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         delta_sig = np.linalg.norm(opt_sig-elf.sig)
         elf.set_c(opt_c)
         elf.set_sig(opt_sig)
-        solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+        solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=base_level, 
                             square_c=square_c, compact_supp=compact_supp)
         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
         params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -393,7 +394,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
         #print('\n'+'#'*90)
         #print('Initial Guess')
         #print('#'*90)
-        solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, square_c=square_c)
+        solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=base_level, square_c=square_c)
         #params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
         #params_distribution_plot(elf.c, elf.sig, square_c=square_c)
         #residual_variance.append(var)
@@ -410,7 +411,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             delta_c = np.linalg.norm(opt_c-elf.c)
             elf.set_c(opt_c)
             #title = 'Best solution at iter={0} and improved c'.format(i)
-            solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+            solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=base_level, 
                                     square_c=square_c, compact_supp=compact_supp)
             params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
             params_distribution_plot(elf.c, elf.sig, square_c=square_c)
@@ -441,7 +442,7 @@ def el_solver(elf, method='iterative', n_iter=5, verbose=True, base_level=0.,
             delta_sig = np.linalg.norm(opt_sig-elf.sig)
             elf.set_sig(opt_sig)
             #title = 'Best solution at iter={0} and improved sig'.format(i)
-            solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, base_level=base_level, 
+            solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=base_level, 
                                     square_c=square_c, compact_supp=compact_supp)
             params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=square_c)
             params_distribution_plot(elf.c, elf.sig, square_c=square_c)
