@@ -18,36 +18,34 @@ def phi(x, y, sig, sig0=minsig, supp=5.):
 
 def phix(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * x')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
     return retval
 
 def phiy(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * y')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2))] = 0.
     return retval
 
 #same as phiyx
 def phixy(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x*y)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2))] = 0.
     return retval
 
 def phixx(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x**2 - sig0**2 - sig**2)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
     return retval
 
 def phiyy(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (y**2 - sig0**2 - sig**2)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2 * (sig0**2+sig**2))] = 0.
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
     return retval
-
-
 
 
 def estimate_rms(data):
     """
-    Computes RMS value of N-dimensional numpy array
+    Computes RMS value of an N-dimensional numpy array
     """
 
     if isinstance(data, ma.MaskedArray):
@@ -59,7 +57,7 @@ def estimate_rms(data):
 
 def estimate_entropy(data):
     """
-    Computes Entropy of N-dimensional numpy array
+    Computes Entropy of an N-dimensional numpy array
     """
 
     # estimation of probabilities
@@ -72,19 +70,19 @@ def estimate_entropy(data):
 
 def estimate_variance(data):
     """
-    Computes variance of N-dimensional numpy array
+    Computes variance of an N-dimensional numpy array
     """
 
     return np.std(data)**2
 
 
-def compute_residual_stats(dfunc, c, sig, xc, yc, base_level=0., square_c=True, compact_supp=True, resolution=5):
+def compute_residual_stats(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, compact_supp=True, resolution=3):
     """
     Computes the residual stats between appproximation and real data
     """
 
-    _xe = np.linspace(0., 1., 41*resolution)[1:-1]
-    _ye = np.linspace(0., 1., 41*resolution)[1:-1]
+    _xe = np.linspace(0., 1., resolution*dims[0])[1:-1]
+    _ye = np.linspace(0., 1., resolution*dims[1])[1:-1]
     len_xe = len(_xe); len_ye = len(_ye)
     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False)
     xe = Xe.ravel(); ye = Ye.ravel()
