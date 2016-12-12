@@ -80,6 +80,7 @@ def random_centers_generation(data, n_centers, cut_value_leq=None, cut_value_geq
         selected.append(sel)
         # update the pixel probabilities array
         prob[index0-1:index0+2, index1-1:index1+2] *= K
+        #prob[index0, index1] = 0.
         prob /= prob.sum()
         
     return points_positions[selected]
