@@ -6,6 +6,10 @@ import numexpr as ne
 
 """
 RBF (Gaussian) functions and its derivatives
+
+NOTE: For the compact support implementation, we
+take the fact that gaussian functions decrease faster
+than polynomial functions
 """
 
 #minimal broadening of gaussians
@@ -23,13 +27,13 @@ def phix(x, y, sig, sig0=minsig, supp=5.):
 
 def phiy(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * y')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2))] = 0.
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
     return retval
 
 #same as phiyx
 def phixy(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x*y)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2))] = 0.
+    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
     return retval
 
 def phixx(x, y, sig, sig0=minsig, supp=5.):
