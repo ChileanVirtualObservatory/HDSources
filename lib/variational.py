@@ -133,6 +133,33 @@ class ELFunc():
         self.base_level = base_level
         self.square_c = square_c
         self.compact_supp = compact_supp
+
+
+    def set_centers(self, xc, yc):
+        xe = self.xe; ye = self.ye
+        xb = self.xb; yb = self.yb
+        Ne = len(xe)
+        Nc = len(xc)
+        Nb = len(xb)
+
+        # re-computing distance matrices
+        Dx = np.empty((Ne,Nc))
+        Dy = np.empty((Ne,Nc))
+        for k in range(Ne):
+            Dx[k,:] = xe[k]-xc
+            Dy[k,:] = ye[k]-yc
+
+        # re-computing distance matrices for boundary points
+        Dxb = np.empty((Nb,Nc))
+        Dyb = np.empty((Nb,Nc))
+        for k in range(Nb):
+            Dxb[k,:] = xb[k]-xc
+            Dyb[k,:] = yb[k]-yc
+        
+        self.xc = xc; self.yc = yc
+        self.Dx = Dx; self.Dy = Dy
+        self.Dxb = Dxb; self.Dyb = Dyb
+
         
     def set_c(self, c):
         self.c = c
@@ -187,9 +214,8 @@ class ELFunc():
                 phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
 
         
-        """
-        Computing u, ux, uy, ...
-        """
+    
+        # computing u, ux, uy, ...
         u = np.dot(phi_m, c) + self.base_level
         if self.b!=0.:
             ux = np.dot(phix_m, c)
@@ -198,16 +224,14 @@ class ELFunc():
             uyy = np.dot(phiyy_m, c)
             uxy = np.dot(phixy_m, c)
         
-        """
-        Computing the EL equation
-        """
+        # computing the EL equation
         if self.b!=0.:
-            el = 2.*(u-self.f0) + \
-                self.a*self.d1psi1(u-self.f0, self.lamb1) - \
-                2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + \
-                          self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))
+            el_str = '2.*(u-self.f0) +'
+            el_str += 'self.a*self.d1psi1(u-self.f0, self.lamb1) -'
+            el_str += '2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))'
+            el = ne.evaluate(el_str)
         else: 
-            el = 2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
+            el = ne.evaluate('2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)')
         
         """
         Boundary conditions (threshold must be added)
@@ -233,12 +257,11 @@ class ELFunc():
         Computing the EL equation
         """
         if self.b!=0.:
-            el = 2.*(u-self.f0) + \
-                self.a*self.d1psi1(u-self.f0, self.lamb1) - \
-                2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + \
-                          self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))
+            el_str = '2.*(u-self.f0) +'
+            el_str += 'self.a*self.d1psi1(u-self.f0, self.lamb1) -'
+            el_str += '2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))'
         else: 
-            el = 2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
+            el = ne.evaluate('2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)')
         
         """
         Boundary conditions
@@ -270,9 +293,8 @@ class ELFunc():
                 phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
                 phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
         
-        """
-        Computing u, ux, uy, ...
-        """
+
+        # computing u, ux, uy, ...
         u = np.dot(phi_m, c) + self.base_level
         if self.b!=0.:
             ux = np.dot(phix_m, c)
@@ -281,16 +303,13 @@ class ELFunc():
             uyy = np.dot(phiyy_m, c)
             uxy = np.dot(phixy_m, c)
         
-        """
-        Computing the EL equation
-        """
+        # computing the EL equation
         if self.b!=0.:
-            el = 2.*(u-self.f0) + \
-                self.a*self.d1psi1(u-self.f0, self.lamb1) - \
-                2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + \
-                          self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))
+            el_str = '2.*(u-self.f0) +'
+            el_str += 'self.a*self.d1psi1(u-self.f0, self.lamb1) -'
+            el_str += '2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))'
         else: 
-            el = 2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
+            el = ne.evaluate('2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)')
         
         """
         Boundary conditions
@@ -305,7 +324,7 @@ Euler-Lagrange instansiation solver
 
 ### ADD VERBOSE LEVEL
 
-def el_solver(elf, method='exact', n_iter=None, step_iter=2000, max_iter=100000, verbose=True):
+def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000, verbose=True):
     # number of centers/parameters
     Nc = len(elf.xc)
 
@@ -327,7 +346,17 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=2000, max_iter=100000,
             # variation of c and sig
             delta_c = np.linalg.norm(opt_c-elf.c)
             delta_sig = np.linalg.norm(opt_sig-elf.sig)
-            
+
+            # searching for noisy gaussians (and removing them)
+            mask = np.abs(opt_sig)<1.
+            if np.any(~mask):
+                print('Noisy gaussians detected and removed! \n')
+                opt_c = opt_c[mask]
+                opt_sig = opt_sig[mask]
+                xc = elf.xc[mask]
+                yc = elf.yc[mask]
+                elf.set_centers(xc, yc)
+
             # update of best parameters
             elf.set_c(opt_c)
             elf.set_sig(opt_sig)
@@ -335,10 +364,6 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=2000, max_iter=100000,
             # residual stats
             var,entr,rms = compute_residual_stats(elf.dfunc, opt_c, opt_sig, elf.xc, elf.yc, dims=elf.dims,
                            base_level=elf.base_level, square_c=elf.square_c, compact_supp=elf.compact_supp)
-            
-            # setting the new current solution
-            elf.set_c(opt_c)
-            elf.set_sig(opt_sig)
             
             # appending residual variance, entropy and rms
             residual_variance.append(var)
@@ -366,6 +391,7 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=2000, max_iter=100000,
     
     if method=='mixed':
         print('\n'+'#'*90)
+
         print('Iteration: 0  -  Optimization on both c and sig parameters')
         print('#'*90)
         sol = sp.optimize.root(elf.F, np.concatenate([elf.c, elf.sig]), method='lm', options={'maxiter':10000}, callback=calllback)
