@@ -37,21 +37,30 @@ def boundary_generation(n_boundary):
     return boundary_points
 
 
-def random_centers_generation(data, n_centers, cut_value_leq=None, cut_value_geq=None, power=5.):
-    data = np.copy(data)
-    if cut_value_leq is not None:
-        mask = data <= cut_value_leq
-    elif cut_value_geq is not None:
-        mask = data >= cut_value_geq
-    data **= power
+def random_centers_generation(dfunc, dims, n_centers, base_level=None, resolution=1., power=3.):
     # fixed seed
     np.random.seed(0)
-    # data dimensions
+
+    # generate the data cube with the corresponding resolution
+    x = np.linspace(0., 1., int(resolution*dims[0])+2, endpoint=True)[1:-1]
+    y = np.linspace(0., 1., int(resolution*dims[1])+2, endpoint=True)[1:-1]
+    data = dfunc(x, y)
+
+    # unusable pixels mask
+    if base_level is not None:
+        mask = data <= base_level
+        if np.sum(~mask) < n_centers:
+            print('The number of usable pixels is less than n_centers')
+            return None
+
+    # applying power and re-normalizing
+    data **= power
+    data /= data.max()
+
+    # data cube dimensions
     m,n = data.shape
     
     # center points positions
-    x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
-    y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
     X,Y  = np.meshgrid(x,y)
     points_positions = np.vstack( [ X.ravel(), Y.ravel() ]).T
     
@@ -59,8 +68,6 @@ def random_centers_generation(data, n_centers, cut_value_leq=None, cut_value_geq
     points_indexes = np.arange(0,points_positions.shape[0])
     
     # array with probabilities of selection for each center
-    #prob = np.zeros(m+2, n+2)
-    #prob[1:m+1, 1:n+1] = (data/data.sum())
     if isinstance(mask, np.ndarray):
         data[mask] = 0.
         prob = data/data.sum()
