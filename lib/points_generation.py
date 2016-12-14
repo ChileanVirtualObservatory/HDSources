@@ -1,3 +1,4 @@
+import ghalton
 import numpy as np
 import scipy.stats as st
 
@@ -84,3 +85,21 @@ def random_centers_generation(data, n_centers, cut_value_leq=None, cut_value_geq
         prob /= prob.sum()
         
     return points_positions[selected]
+
+
+def qrandom_centers_generation(dfunc, n_centers, base_level, ndim=2, get_size=50):
+    # generating the sequencer
+    sequencer = ghalton.Halton(ndim)
+
+    points_positions = []
+    n_selected = 0
+
+    while True:
+        points = sequencer.get(get_size)
+        points_X, points_Y = zip(*points)
+        for i in range(get_size):
+            if dfunc(points_X[i], points_Y[i]) > base_level:
+                points_positions.append(points[i])
+                n_selected += 1
+            if n_selected == n_centers:
+                return np.asarray(points_positions)
