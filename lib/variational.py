@@ -230,8 +230,9 @@ class ELFunc():
             el_str += 'self.a*self.d1psi1(u-self.f0, self.lamb1) -'
             el_str += '2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))'
             el = ne.evaluate(el_str)
-        else: 
-            el = ne.evaluate('2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)')
+        else:
+            el =  2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
+            #el = ne.evaluate('2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)')
         
         """
         Boundary conditions (threshold must be added)
@@ -340,8 +341,9 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             print('#'*90)
             # lm optimization
             sol = sp.optimize.root(elf.F, np.concatenate([elf.c, elf.sig]), method='lm', options={'maxiter':step_iter})
-            opt_c = sol.x[0:Nc]
-            opt_sig = sol.x[Nc:]
+            sol_length = len(sol.x)
+            opt_c = sol.x[0:sol_length/2]
+            opt_sig = sol.x[sol_length/2:]
             
             # variation of c and sig
             delta_c = np.linalg.norm(opt_c-elf.c)
@@ -495,14 +497,14 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
         plt.figure(figsize=(12,5))
         plt.subplot(1,3,1)
         plt.xlim(-0.2, (2.*n_iter-1)+0.2)
-        plt.plot(range(2*n_iter), residual_rms, 'go-')
+        plt.plot(range(2*n_iter), residual_rms, marker='o', c='g', s=1.)
         plt.title('Residual RMS')        
         plt.subplot(1,3,2)
         plt.xlim(-0.2, (2.*n_iter-1)+0.2)
-        plt.plot(range(2*n_iter), residual_variance, 'bo-')
+        plt.plot(range(2*n_iter), residual_variance, marker='o', c='b', s=1.)
         plt.title('Residual variance')
         plt.subplot(1,3,3)
         plt.xlim(-0.2, (2.*n_iter-1)+0.2)
-        plt.plot(range(2*n_iter), residual_entropy, 'ro-')
+        plt.plot(range(2*n_iter), residual_entropy, marker='o', c='b', s=1.)
         plt.title('Residual entropy')
         plt.show()

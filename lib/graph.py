@@ -25,7 +25,7 @@ def plotter(dfunc, c, sig, xc, resolution=10, title=None):
     plt.show()
 
 
-def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, resolution=5, title=None, compact_supp=True):
+def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, resolution=1, title=None, compact_supp=True):
     _xe = np.linspace(0., 1., resolution*dims[0])[1:-1]
     _ye = np.linspace(0., 1., resolution*dims[1])[1:-1]
     len_xe = len(_xe); len_ye = len(_ye)
