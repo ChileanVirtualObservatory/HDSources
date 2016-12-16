@@ -1,19 +1,36 @@
+import numba
 import numpy as np
 import numpy.ma as ma
 import scipy as sp
 import numexpr as ne
+from math import sqrt, exp
 
 
-"""
-RBF (Gaussian) functions and its derivatives
+##################################################################
+# GLOBAL VARIABLES
+##################################################################
+supp = 5.      # gaussians support
+minsig = 0.001 # guassians minimal broadening
 
-NOTE: For the compact support implementation, we
-take the fact that gaussian functions decrease faster
-than polynomial functions
-"""
+@numba.jit('float64[:] (float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64, float64)', nopython=True)
+def evaluate(c, sig, xe, ye, xc, yc, supp=5., sig0=0.001):
+    m = len(xe)
+    n = len(xc)
+    ret = np.zeros(m)
+    for i in range(m):
+        for j in range(n):
+            if (xe[i]-xc[j])**2 + (ye[i]-yc[j])**2 > supp**2 * sig[j]**2: continue
+            ret[i] += c[j] * exp( -( (xe[i]-xc[j])**2 + (ye[i]-yc[j])**2 ) / (2* (sig0**2 + sig[j]**2) ) )
+    return ret 
 
-#minimal broadening of gaussians
-minsig = 0.001
+
+###################################################################
+# RBF (Gaussian) functions and its derivatives
+#
+# NOTE: For the compact support implementation, we
+# take the fact that gaussian functions decrease faster
+# than polynomial functions
+###################################################################
 
 def phi(x, y, sig, sig0=minsig, supp=5.):
     retval = ne.evaluate('exp(-(x**2+y**2)/(2*(sig0**2+sig**2)))')
@@ -80,33 +97,35 @@ def estimate_variance(data):
     return np.std(data)**2
 
 
-def compute_residual_stats(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, compact_supp=True, resolution=3):
+def compute_residual_stats(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, compact_supp=True, resolution=1):
     """
     Computes the residual stats between appproximation and real data
     """
 
-    _xe = np.linspace(0., 1., resolution*dims[0])[1:-1]
-    _ye = np.linspace(0., 1., resolution*dims[1])[1:-1]
+    _xe = np.linspace(0., 1., resolution*dims[0]+2)[1:-1]
+    _ye = np.linspace(0., 1., resolution*dims[1]+2)[1:-1]
     len_xe = len(_xe); len_ye = len(_ye)
     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False)
     xe = Xe.ravel(); ye = Ye.ravel()
     Nc = len(xc)
     Ne = len(xe)
-    
+
+
+    u = evaluate(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig) + base_level
+    u = u.reshape(len_xe, len_ye)
     
     #Computing distance matrices
-    Dx = np.empty((Ne,Nc))
-    Dy = np.empty((Ne,Nc))
-    for k in range(Ne):
-        Dx[k,:] = xe[k]-xc
-        Dy[k,:] = ye[k]-yc
+    #Dx = np.empty((Ne,Nc))
+    #Dy = np.empty((Ne,Nc))
+    #for k in range(Ne):
+    #    Dx[k,:] = xe[k]-xc
+    #    Dy[k,:] = ye[k]-yc
     
     #Computing the Phi matrix
-    if square_c: c = c**2
-    if compact_supp: phi_m = phi(Dx, Dy, sig.reshape(1,-1))
-    else: phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)
-    u = np.dot(phi_m, c) + base_level
-    u = u.reshape(len_xe, len_ye)
+    #if square_c: c = c**2
+    #if compact_supp: phi_m = phi(Dx, Dy, sig.reshape(1,-1))
+    #else: phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)
+    #u = np.dot(phi_m, c) + base_level
 
     residual = dfunc(_xe, _ye)-u
     return (estimate_variance(residual), 
