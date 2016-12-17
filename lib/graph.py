@@ -2,7 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from utils import phi
+from utils import phi, evaluate
+
+
+##################################################################
+# GLOBAL VARIABLES
+##################################################################
+supp = 5.      # gaussians support
+minsig = 0.001 # guassians minimal broadening
 
 
 def plotter(dfunc, c, sig, xc, resolution=10, title=None):
@@ -25,67 +32,60 @@ def plotter(dfunc, c, sig, xc, resolution=10, title=None):
     plt.show()
 
 
-def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, resolution=1, title=None, compact_supp=True):
-    _xe = np.linspace(0., 1., resolution*dims[0])[1:-1]
-    _ye = np.linspace(0., 1., resolution*dims[1])[1:-1]
+def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, mask=None, 
+                 resolution=1, title=None, compact_supp=True):
+    _xe = np.linspace(0., 1., resolution*dims[0]+2)[1:-1]
+    _ye = np.linspace(0., 1., resolution*dims[1]+2)[1:-1]
     len_xe = len(_xe); len_ye = len(_ye)
     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False)
     xe = Xe.ravel(); ye = Ye.ravel()
     Nc = len(xc)
     Ne = len(xe)
-    
-    """ 
-    Computing distance matrices
-    """
-    #distance matrices
-    Dx = np.empty((Ne,Nc))
-    Dy = np.empty((Ne,Nc))
-    for k in range(Ne):
-        Dx[k,:] = xe[k]-xc
-        Dy[k,:] = ye[k]-yc
-    """
-    Computing the Phi matrix
-    """
+
+    # approximation
     if square_c: c = c**2
-    if compact_supp: phi_m = phi(Dx, Dy, sig.reshape(1,-1))
-    else: phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)
-    u = np.dot(phi_m, c) + base_level
+    u = evaluate(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig) + base_level
     u = u.reshape(len_xe, len_ye)
 
-    """
-    2D plot
-    """
+    # real data
+    f = dfunc(_xe, _ye)
+
+    # residual
+    res = f-u
+
+
+    # unusable pixels are fixed to 0
+    if mask is not None: 
+        u[~mask] = 0.
+        f[~mask] = 0.
+        res[~mask] = 0.
+
+
+    # original data plot
     plt.figure(figsize=(18,12))
     plt.subplot(1,3,1)
     ax = plt.gca()
-    im = ax.imshow(dfunc(_xe, _ye), vmin=0., vmax=1.)
-    #plt.imshow(np.log10(np.abs(u)+1e-10))
+    im = ax.imshow(f, vmin=0., vmax=1.)
     plt.title('Original')
     plt.axis('off')
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     
-    """
-    2D plot
-    """
+    # approximated solution plot
     plt.subplot(1,3,2)
     ax = plt.gca()
     im = ax.imshow(u, vmin=0., vmax=1.)
-    #plt.imshow(np.log10(np.abs(u)+1e-10))
     plt.title('Solution')
     plt.axis('off')
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     
-    """
-    2D plot
-    """
+    # residual plot
     plt.subplot(1,3,3)
     ax = plt.gca()
-    im = ax.imshow(dfunc(_xe, _ye)-u, vmin=-0.1, vmax=0.1)
-    #plt.imshow(np.log10(np.abs(u)+1e-10))
+    im = ax.imshow(res, vmin=-0.1, vmax=0.1)
     plt.title('Residual')
     plt.axis('off')
     divider = make_axes_locatable(ax)

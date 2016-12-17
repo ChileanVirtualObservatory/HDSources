@@ -325,7 +325,7 @@ Euler-Lagrange instansiation solver
 
 ### ADD VERBOSE LEVEL
 
-def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000, verbose=True):
+def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000, mask=None, verbose=True):
     # number of centers/parameters
     Nc = len(elf.xc)
 
@@ -386,7 +386,7 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
         
         # plots generation
         solution_plot(elf.dfunc, opt_c, opt_sig, elf.xc, elf.yc, dims=elf.dims, base_level=elf.base_level, 
-                      square_c=elf.square_c, compact_supp=elf.compact_supp)
+                      mask=mask, square_c=elf.square_c, compact_supp=elf.compact_supp)
         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=elf.square_c)
         params_distribution_plot(elf.c, elf.sig, square_c=elf.square_c)
         residual_plot(residual_variance, residual_entropy, residual_rms, iter_list[0:len(residual_rms)])
@@ -404,7 +404,7 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
         elf.set_c(opt_c)
         elf.set_sig(opt_sig)
         solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=elf.base_level, 
-                            square_c=elf.square_c, compact_supp=elf.compact_supp)
+                            mask=mask, square_c=elf.square_c, compact_supp=elf.compact_supp)
         params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=elf.square_c)
         params_distribution_plot(elf.c, elf.sig, square_c=elf.square_c)
 
@@ -421,7 +421,8 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
         #print('\n'+'#'*90)
         #print('Initial Guess')
         #print('#'*90)
-        solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=elf.base_level, square_c=elf.square_c)
+        solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=elf.base_level,
+                      mask=mask, square_c=elf.square_c)
         #params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=elf.square_c)
         #params_distribution_plot(elf.c, elf.sig, square_c=elf.square_c)
         #residual_variance.append(var)
@@ -439,7 +440,7 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             elf.set_c(opt_c)
             #title = 'Best solution at iter={0} and improved c'.format(i)
             solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=elf.base_level, 
-                                    square_c=elf.square_c, compact_supp=elf.compact_supp)
+                          mask=mask, square_c=elf.square_c, compact_supp=elf.compact_supp)
             params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=elf.square_c)
             params_distribution_plot(elf.c, elf.sig, square_c=elf.square_c)
             print('Variation on c={0}'.format(delta_c))
@@ -470,7 +471,7 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             elf.set_sig(opt_sig)
             #title = 'Best solution at iter={0} and improved sig'.format(i)
             solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=elf.base_level, 
-                                    square_c=elf.square_c, compact_supp=elf.compact_supp)
+                          mask=mask, square_c=elf.square_c, compact_supp=elf.compact_supp)
             params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=elf.square_c)
             params_distribution_plot(elf.c, elf.sig, square_c=elf.square_c)
             
@@ -497,14 +498,14 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
         plt.figure(figsize=(12,5))
         plt.subplot(1,3,1)
         plt.xlim(-0.2, (2.*n_iter-1)+0.2)
-        plt.plot(range(2*n_iter), residual_rms, marker='o', c='g', s=1.)
+        plt.plot(range(2*n_iter), residual_rms, marker='o', c='g', s=.1)
         plt.title('Residual RMS')        
         plt.subplot(1,3,2)
         plt.xlim(-0.2, (2.*n_iter-1)+0.2)
-        plt.plot(range(2*n_iter), residual_variance, marker='o', c='b', s=1.)
+        plt.plot(range(2*n_iter), residual_variance, marker='o', c='b', s=.1)
         plt.title('Residual variance')
         plt.subplot(1,3,3)
         plt.xlim(-0.2, (2.*n_iter-1)+0.2)
-        plt.plot(range(2*n_iter), residual_entropy, marker='o', c='b', s=1.)
+        plt.plot(range(2*n_iter), residual_entropy, marker='o', c='b', s=.1)
         plt.title('Residual entropy')
         plt.show()

@@ -37,7 +37,7 @@ def boundary_generation(n_boundary):
     return boundary_points
 
 
-def random_centers_generation(dfunc, dims, n_centers, base_level=None, resolution=1., power=3.):
+def random_centers_generation(dfunc, dims, n_centers, base_level=None, resolution=1., power=2.):
     # fixed seed
     np.random.seed(0)
 

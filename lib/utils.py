@@ -110,22 +110,9 @@ def compute_residual_stats(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=
     Nc = len(xc)
     Ne = len(xe)
 
-
+    if square_c: c = c**2
     u = evaluate(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig) + base_level
     u = u.reshape(len_xe, len_ye)
-    
-    #Computing distance matrices
-    #Dx = np.empty((Ne,Nc))
-    #Dy = np.empty((Ne,Nc))
-    #for k in range(Ne):
-    #    Dx[k,:] = xe[k]-xc
-    #    Dy[k,:] = ye[k]-yc
-    
-    #Computing the Phi matrix
-    #if square_c: c = c**2
-    #if compact_supp: phi_m = phi(Dx, Dy, sig.reshape(1,-1))
-    #else: phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)
-    #u = np.dot(phi_m, c) + base_level
 
     residual = dfunc(_xe, _ye)-u
     return (estimate_variance(residual), 
