@@ -225,14 +225,20 @@ class ELFunc():
             uxy = np.dot(phixy_m, c)
         
         # computing the EL equation
+        f0 = self.f0; a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
+
+        tmp1 = ne.evaluate('u-f0')
+        tmp2 = self.d1psi1(tmp1, lamb1)
+        el = ne.evaluate('2*tmp1 + a*tmp2')
+
         if self.b!=0.:
-            el_str = '2.*(u-self.f0) +'
-            el_str += 'self.a*self.d1psi1(u-self.f0, self.lamb1) -'
-            el_str += '2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))'
-            el = ne.evaluate(el_str)
-        else:
-            el =  2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
-            #el = ne.evaluate('2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)')
+            laplacian = ne.evaluate('ux**2 + uy**2')
+            tmp1 = ne.evaluate('((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy)')
+            tmp2 = ne.evaluate('uxx + uyy')
+            tmp3 = self.d2psi2(laplacian, lamb2)
+            tmp4 = self.d1psi2(laplacian, lamb2)
+            el += ne.evaluate('2*b*(2* tmp3*tmp1  + tmp4*tmp2)')
+
         
         """
         Boundary conditions (threshold must be added)
@@ -254,15 +260,21 @@ class ELFunc():
             uyy = np.dot(phiyy_m, c)
             uxy = np.dot(phixy_m, c)
 
-        """
-        Computing the EL equation
-        """
+
+        # computing the EL equation
+        f0 = self.f0; a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
+
+        tmp1 = ne.evaluate('u-f0')
+        tmp2 = self.d1psi1(tmp1, lamb1)
+        el = ne.evaluate('2*tmp1 + a*tmp2')
+
         if self.b!=0.:
-            el_str = '2.*(u-self.f0) +'
-            el_str += 'self.a*self.d1psi1(u-self.f0, self.lamb1) -'
-            el_str += '2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))'
-        else: 
-            el = ne.evaluate('2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)')
+            laplacian = ne.evaluate('ux**2 + uy**2')
+            tmp1 = ne.evaluate('((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy)')
+            tmp2 = ne.evaluate('uxx + uyy')
+            tmp3 = self.d2psi2(laplacian, lamb2)
+            tmp4 = self.d1psi2(laplacian, lamb2)
+            el += ne.evaluate('2*b*(2* tmp3*tmp1  + tmp4*tmp2)')
         
         """
         Boundary conditions
@@ -304,13 +316,21 @@ class ELFunc():
             uyy = np.dot(phiyy_m, c)
             uxy = np.dot(phixy_m, c)
         
+
         # computing the EL equation
+        f0 = self.f0; a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
+
+        tmp1 = ne.evaluate('u-f0')
+        tmp2 = self.d1psi1(tmp1, lamb1)
+        el = ne.evaluate('2*tmp1 + a*tmp2')
+
         if self.b!=0.:
-            el_str = '2.*(u-self.f0) +'
-            el_str += 'self.a*self.d1psi1(u-self.f0, self.lamb1) -'
-            el_str += '2*self.b*(2*self.d2psi2(ux**2 + uy**2, self.lamb2) * ((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy) + self.d1psi2(ux**2 + uy**2, self.lamb2)*(uxx + uyy))'
-        else: 
-            el = ne.evaluate('2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)')
+            laplacian = ne.evaluate('ux**2 + uy**2')
+            tmp1 = ne.evaluate('((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy)')
+            tmp2 = ne.evaluate('uxx + uyy')
+            tmp3 = self.d2psi2(laplacian, lamb2)
+            tmp4 = self.d1psi2(laplacian, lamb2)
+            el += ne.evaluate('2*b*(2* tmp3*tmp1  + tmp4*tmp2)')
         
         """
         Boundary conditions
