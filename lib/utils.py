@@ -113,7 +113,8 @@ def compute_residual_stats(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=
     if square_c: c = c**2
     u = evaluate(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig) + base_level
     u = u.reshape(len_xe, len_ye)
-
+   
+ 
     residual = dfunc(_xe, _ye)-u
     return (estimate_variance(residual), 
             estimate_entropy(residual),
