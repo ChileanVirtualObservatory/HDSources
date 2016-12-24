@@ -28,11 +28,11 @@ def estimate_initial_guess(center_points, dfunc, R=0.05, minsig=0.001, method='m
             gaussian function has decayed to the half
             """
             if num_neigh[i]==0:
-                c_arr[i] = dfunc(*center_points[i])[0]
+                c_arr[i] = dfunc(center_points[i])[0]
                 sig_arr[i] = minsig
             else:
                 mean_dist[i] /= num_neigh[i]
-                c_arr[i] = dfunc(*center_points[i])[0]/num_neigh[i]
+                c_arr[i] = dfunc(center_points[i])[0]/num_neigh[i]
                 #c_arr[i] = dfunc(*center_points[i])[0]*mean_dist[i]**2
                 sig_arr[i] = f*mean_dist[i]
                 
@@ -58,9 +58,9 @@ def estimate_initial_guess(center_points, dfunc, R=0.05, minsig=0.001, method='m
             some explanation here
             """
             if num_neigh[i]==0:
-                c_arr[i] = dfunc(*center_points[i])[0]
+                c_arr[i] = dfunc(center_points[i])[0]
                 sig_arr[i] = minsig
             else:
-                c_arr[i] = dfunc(*center_points[i])[0]/(num_neigh[i]+1)
+                c_arr[i] = dfunc(center_points[i])[0]/(num_neigh[i]+1)
                 sig_arr[i] = min_dist[i] 
     return (c_arr,sig_arr)
