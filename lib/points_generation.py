@@ -1,4 +1,5 @@
 import ghalton
+import copy
 import numpy as np
 import scipy.stats as st
 
@@ -37,14 +38,12 @@ def boundary_generation(n_boundary):
     return boundary_points
 
 
-def random_centers_generation(dfunc, dims, n_centers, base_level=None, resolution=1., power=2.):
+def random_centers_generation(data, n_centers, base_level=None, power=2.):
     # fixed seed
     np.random.seed(0)
 
-    # generate the data cube with the corresponding resolution
-    x = np.linspace(0., 1., int(resolution*dims[0])+2, endpoint=True)[1:-1]
-    y = np.linspace(0., 1., int(resolution*dims[1])+2, endpoint=True)[1:-1]
-    data = dfunc(x, y)
+    # for safety reasons
+    data = copy.copy(data)
 
     # unusable pixels mask
     if base_level is not None:
@@ -61,6 +60,8 @@ def random_centers_generation(dfunc, dims, n_centers, base_level=None, resolutio
     m,n = data.shape
     
     # center points positions
+    x = np.linspace(0., 1., m+2, endpoint=True)[1:-1]
+    y = np.linspace(0., 1., n+2, endpoint=True)[1:-1]
     X,Y  = np.meshgrid(x,y)
     points_positions = np.vstack( [ X.ravel(), Y.ravel() ]).T
     
@@ -102,10 +103,11 @@ def qrandom_centers_generation(dfunc, n_centers, base_level, ndim=2, get_size=50
     n_selected = 0
 
     while True:
-        points = sequencer.get(get_size)
-        points_X, points_Y = zip(*points)
+        points = np.asarray(sequencer.get(get_size))
+        values = dfunc(points)
+
         for i in range(get_size):
-            if dfunc(points_X[i], points_Y[i]) > base_level:
+            if values[i] > base_level:
                 points_positions.append(points[i])
                 n_selected += 1
             if n_selected == n_centers:
