@@ -1,15 +1,18 @@
+import time
 import scipy
+import numba
 import scipy as sp
 import numpy as np
 import numexpr as ne
+from math import sqrt, exp
 import matplotlib.pyplot as plt
 from graph import  solution_plot, params_plot, params_distribution_plot, residual_plot
 from utils import *
 
 
-"""
-General Psi penalizing function (applicable in both cases)
-"""
+#################################################################
+# General Psi penalizing function (applicable in both cases)
+#################################################################
 def psi(x, lamb=1.):
     x = lamb*x
     ret = np.empty(x.shape)
@@ -50,14 +53,15 @@ def d2psi(x, lamb=1.):
     return (lamb**2)*ret
 
 
-"""
-Euler-Lagrange class definition
-"""
+#################################################################
+# Euler-Lagrange class definition
+#################################################################
 class ELFunc():
     def __init__(self, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
                  a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, compact_supp=False):
-        f0 = np.array([dfunc(xe[i],ye[i]) for i in range(len(xe))]).ravel()
-        fb = np.array([dfunc(xb[i],yb[i]) for i in range(len(xb))]).ravel()
+
+        f0 = dfunc( np.vstack([xe,ye]).T )
+        fb = dfunc( np.vstack([xb,yb]).T )
         len_f0 = len(f0)
         len_c0 = len(c0)
         len_sig0 = len(sig0)
@@ -69,37 +73,37 @@ class ELFunc():
         Computing distance matrices
         """
         #distance matrices
-        Dx = np.empty((Ne,Nc))
-        Dy = np.empty((Ne,Nc))
-        for k in range(Ne):
-            Dx[k,:] = xe[k]-xc
-            Dy[k,:] = ye[k]-yc
-        #distance matrices for boundary points
-        Dxb = np.empty((Nb,Nc))
-        Dyb = np.empty((Nb,Nc))
-        for k in range(Nb):
-            Dxb[k,:] = xb[k]-xc
-            Dyb[k,:] = yb[k]-yc
+        #Dx = np.empty((Ne,Nc))
+        #Dy = np.empty((Ne,Nc))
+        #for k in range(Ne):
+        #    Dx[k,:] = xe[k]-xc
+        #    Dy[k,:] = ye[k]-yc
+        ##distance matrices for boundary points
+        #Dxb = np.empty((Nb,Nc))
+        #Dyb = np.empty((Nb,Nc))
+        #for k in range(Nb):
+        #    Dxb[k,:] = xb[k]-xc
+        #    Dyb[k,:] = yb[k]-yc
             
-        """
-        Computing Phi matrices
-        """
-        if compact_supp:
-            phi_m = phi(Dx, Dy, sig0.reshape(1,-1))
-            if b!=0.:
-                phix_m = phix(Dx, Dy, sig0.reshape(1,-1))
-                phiy_m = phiy(Dx, Dy, sig0.reshape(1,-1))
-                phixx_m = phixx(Dx, Dy, sig0.reshape(1,-1))
-                phixy_m = phixy(Dx, Dy, sig0.reshape(1,-1))
-                phiyy_m = phiyy(Dx, Dy, sig0.reshape(1,-1))
-        else:
-            phi_m = phi(Dx, Dy, sig0.reshape(1,-1), supp=0.)
-            if b!=0.:
-                phix_m = phix(Dx, Dy, sig0.reshape(1,-1), supp=0.)
-                phiy_m = phiy(Dx, Dy, sig0.reshape(1,-1), supp=0.)
-                phixx_m = phixx(Dx, Dy, sig0.reshape(1,-1), supp=0.)
-                phixy_m = phixy(Dx, Dy, sig0.reshape(1,-1), supp=0.)
-                phiyy_m = phiyy(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+        
+        # computing Phi matrices
+        
+        #if compact_supp:
+        #    phi_m = phi(Dx, Dy, sig0.reshape(1,-1))
+        #    if b!=0.:
+        #        phix_m = phix(Dx, Dy, sig0.reshape(1,-1))
+        #        phiy_m = phiy(Dx, Dy, sig0.reshape(1,-1))
+        #        phixx_m = phixx(Dx, Dy, sig0.reshape(1,-1))
+        #        phixy_m = phixy(Dx, Dy, sig0.reshape(1,-1))
+        #        phiyy_m = phiyy(Dx, Dy, sig0.reshape(1,-1))
+        #else:
+        #    phi_m = phi(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+        #    if b!=0.:
+        #        phix_m = phix(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+        #        phiy_m = phiy(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+        #        phixx_m = phixx(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+        #        phixy_m = phixy(Dx, Dy, sig0.reshape(1,-1), supp=0.)
+        #        phiyy_m = phiyy(Dx, Dy, sig0.reshape(1,-1), supp=0.)
 
         
         """
@@ -112,15 +116,15 @@ class ELFunc():
         self.xe = xe; self.ye = ye
         self.xc = xc; self.yc = yc
         self.xb = xb; self.yb = yb
-        self.Dx = Dx; self.Dxb = Dxb
-        self.Dy = Dy; self.Dyb = Dyb
-        self.phi_m = phi_m
-        if b!=0.:
-            self.phix_m = phix_m
-            self.phiy_m = phiy_m
-            self.phixx_m = phixx_m
-            self.phiyy_m = phiyy_m
-            self.phixy_m = phixy_m
+        #self.Dx = Dx; self.Dxb = Dxb
+        #self.Dy = Dy; self.Dyb = Dyb
+        #self.phi_m = phi_m
+        #if b!=0.:
+        #    self.phix_m = phix_m
+        #    self.phiy_m = phiy_m
+        #    self.phixx_m = phixx_m
+        #    self.phiyy_m = phiyy_m
+        #    self.phixy_m = phixy_m
         self.c = c0
         self.sig = sig0
         self.d1psi1 = d1psi1
@@ -136,29 +140,29 @@ class ELFunc():
 
 
     def set_centers(self, xc, yc):
-        xe = self.xe; ye = self.ye
-        xb = self.xb; yb = self.yb
-        Ne = len(xe)
-        Nc = len(xc)
-        Nb = len(xb)
+        #xe = self.xe; ye = self.ye
+        #xb = self.xb; yb = self.yb
+        #Ne = len(xe)
+        #Nc = len(xc)
+        #Nb = len(xb)
 
         # re-computing distance matrices
-        Dx = np.empty((Ne,Nc))
-        Dy = np.empty((Ne,Nc))
-        for k in range(Ne):
-            Dx[k,:] = xe[k]-xc
-            Dy[k,:] = ye[k]-yc
+        #Dx = np.empty((Ne,Nc))
+        #Dy = np.empty((Ne,Nc))
+        #for k in range(Ne):
+        #    Dx[k,:] = xe[k]-xc
+        #    Dy[k,:] = ye[k]-yc
 
         # re-computing distance matrices for boundary points
-        Dxb = np.empty((Nb,Nc))
-        Dyb = np.empty((Nb,Nc))
-        for k in range(Nb):
-            Dxb[k,:] = xb[k]-xc
-            Dyb[k,:] = yb[k]-yc
+        #Dxb = np.empty((Nb,Nc))
+        #Dyb = np.empty((Nb,Nc))
+        #for k in range(Nb):
+        #    Dxb[k,:] = xb[k]-xc
+        #    Dyb[k,:] = yb[k]-yc
         
         self.xc = xc; self.yc = yc
-        self.Dx = Dx; self.Dy = Dy
-        self.Dxb = Dxb; self.Dyb = Dyb
+        #self.Dx = Dx; self.Dy = Dy
+        #self.Dxb = Dxb; self.Dyb = Dyb
 
         
     def set_c(self, c):
@@ -169,22 +173,22 @@ class ELFunc():
         """
         Re-computing Phi matrices
         """
-        if self.compact_supp:
-            self.phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1))
-            if self.b!=0.:
-                self.phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1))
-                self.phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1))
-                self.phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1))
-                self.phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1))
-                self.phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1))
-        else:
-            self.phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
-            if self.b!=0.:
-                self.phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
-                self.phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
-                self.phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
-                self.phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
-                self.phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+        #if self.compact_supp:
+        #    self.phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1))
+        #    if self.b!=0.:
+        #        self.phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1))
+        #        self.phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1))
+        #        self.phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1))
+        #        self.phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1))
+        #        self.phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1))
+        #else:
+        #    self.phi_m = phi(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+        #    if self.b!=0.:
+        #        self.phix_m = phix(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+        #       self.phiy_m = phiy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+        #       self.phixx_m = phixx(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+        #       self.phixy_m = phixy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
+        #        self.phiyy_m = phiyy(self.Dx, self.Dy, sig.reshape(1,-1), supp=0.)
 
     
     def F(self, X):
@@ -194,23 +198,23 @@ class ELFunc():
         
         xe = self.xe; ye = self.ye
         xb = self.xb; yb = self.yb
-        Ne = len(xe)
-        Nc = len(xc)
-        Nb = len(xb)
+        #Ne = len(xe)
+        #Nc = len(xc)
+        #Nb = len(xb)
 
         # re-computing distance matrices
-        Dx = np.empty((Ne,Nc))
-        Dy = np.empty((Ne,Nc))
-        for k in range(Ne):
-            Dx[k,:] = xe[k]-xc
-            Dy[k,:] = ye[k]-yc
+        #Dx = np.empty((Ne,Nc))
+        #Dy = np.empty((Ne,Nc))
+        #for k in range(Ne):
+        #    Dx[k,:] = xe[k]-xc
+        #    Dy[k,:] = ye[k]-yc
 
         # re-computing distance matrices for boundary points
-        Dxb = np.empty((Nb,Nc))
-        Dyb = np.empty((Nb,Nc))
-        for k in range(Nb):
-            Dxb[k,:] = xb[k]-xc
-            Dyb[k,:] = yb[k]-yc
+        #Dxb = np.empty((Nb,Nc))
+        #Dyb = np.empty((Nb,Nc))
+        #for k in range(Nb):
+        #    Dxb[k,:] = xb[k]-xc
+        #    Dyb[k,:] = yb[k]-yc
         
         
         if self.square_c: c = X[2*N:3*N]**2
@@ -219,33 +223,36 @@ class ELFunc():
 
 
         # computing the phi-matrices
-        if self.compact_supp:
-            phi_m = phi(Dx, Dy, sig.reshape(1,-1))
-            if self.b!=0.:
-                phix_m = phix(Dx, Dy, sig.reshape(1,-1))
-                phiy_m = phiy(Dx, Dy, sig.reshape(1,-1))
-                phixx_m = phixx(Dx, Dy, sig.reshape(1,-1))
-                phixy_m = phixy(Dx, Dy, sig.reshape(1,-1))
-                phiyy_m = phiyy(Dx, Dy, sig.reshape(1,-1))
-        else:
-            phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)
-            if self.b!=0.:
-                phix_m = phix(Dx, Dy, sig.reshape(1,-1), supp=0.)
-                phiy_m = phiy(Dx, Dy, sig.reshape(1,-1), supp=0.)
-                phixx_m = phixx(Dx, Dy, sig.reshape(1,-1), supp=0.)
-                phixy_m = phixy(Dx, Dy, sig.reshape(1,-1), supp=0.)
-                phiyy_m = phiyy(Dx, Dy, sig.reshape(1,-1), supp=0.)
+        #if self.compact_supp:
+        #    phi_m = phi(Dx, Dy, sig.reshape(1,-1))
+        #    if self.b!=0.:
+        #        phix_m = phix(Dx, Dy, sig.reshape(1,-1))
+        #        phiy_m = phiy(Dx, Dy, sig.reshape(1,-1))
+        #        phixx_m = phixx(Dx, Dy, sig.reshape(1,-1))
+        #        phixy_m = phixy(Dx, Dy, sig.reshape(1,-1))
+        #        phiyy_m = phiyy(Dx, Dy, sig.reshape(1,-1))
+        #else:
+        #    phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)
+        #    if self.b!=0.:
+        #        phix_m = phix(Dx, Dy, sig.reshape(1,-1), supp=0.)
+        #        phiy_m = phiy(Dx, Dy, sig.reshape(1,-1), supp=0.)
+        #        phixx_m = phixx(Dx, Dy, sig.reshape(1,-1), supp=0.)
+        #        phixy_m = phixy(Dx, Dy, sig.reshape(1,-1), supp=0.)
+        #        phiyy_m = phiyy(Dx, Dy, sig.reshape(1,-1), supp=0.)
 
         
     
         # computing u, ux, uy, ...
-        u = np.dot(phi_m, c) + self.base_level
-        if self.b!=0.:
-            ux = np.dot(phix_m, c)
-            uy = np.dot(phiy_m, c)
-            uxx = np.dot(phixx_m, c)
-            uyy = np.dot(phiyy_m, c)
-            uxy = np.dot(phixy_m, c)
+        #u = np.dot(phi_m, c) + self.base_level
+        #if self.b!=0.:
+        #    ux = np.dot(phix_m, c)
+        #    uy = np.dot(phiy_m, c)
+        #    uxx = np.dot(phixx_m, c)
+        #    uyy = np.dot(phiyy_m, c)
+        #    uxy = np.dot(phixy_m, c)
+
+        # computing u, ux, uy, ...
+        u = u_eval(c, sig, xe, ye, xc, yc, supp=5., sig0=0.001) + self.base_level
         
         # computing the EL equation
         f0 = self.f0; a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
@@ -264,20 +271,20 @@ class ELFunc():
         
         
         # boundary conditions (threshold must be added)
-        bc = np.dot(phi(self.Dxb, self.Dyb, sig.reshape(1,-1)), c) + self.base_level - self.fb
-        return np.concatenate([el,bc])
+        #bc = np.dot(phi(self.Dxb, self.Dyb, sig.reshape(1,-1)), c) + self.base_level - self.fb
+        
+        #return np.concatenate([el,bc])
+        return el
     
    
+#################################################################
+# Euler-Lagrange instansiation solver
+#################################################################
 
-"""
-Euler-Lagrange instansiation solver
-"""
-
-### ADD VERBOSE LEVEL
+# NOTE: ADD VERBOSITY LEVEL
 
 def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000, mask=None, verbose=True):
-    # number of centers/parameters
-    Nc = len(elf.xc)
+    t0 = time.time()
 
     if method=='exact':
         residual_variance = []
@@ -298,7 +305,7 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             opt_c = sol.x[2*sol_length:3*sol_length]
             opt_sig = sol.x[3*sol_length:4*sol_length]
             
-            # variation of c and sig
+            # variation centers, c and sig
             delta_xc = np.linalg.norm(opt_xc-elf.xc)
             delta_yc = np.linalg.norm(opt_yc-elf.yc)
             delta_c = np.linalg.norm(opt_c-elf.c)
@@ -307,11 +314,11 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             # searching for noisy gaussians (and removing them)
             mask = np.abs(opt_sig)<1.
             if np.any(~mask):
-                print('Noisy gaussians detected and removed! \n')
-                opt_c = opt_c[mask]
-                opt_sig = opt_sig[mask]
+                print('{0} noisy gaussians detected and removed! \n'.format(np.sum(~mask)))
                 opt_xc = opt_xc[mask]
                 opt_yc = opt_yc[mask]
+                opt_c = opt_c[mask]
+                opt_sig = opt_sig[mask]
 
             # update of best parameters
             elf.set_centers(opt_xc, opt_yc)
@@ -320,7 +327,7 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             
             # residual stats
             var,entr,rms = compute_residual_stats(elf.dfunc, opt_c, opt_sig, elf.xc, elf.yc, dims=elf.dims,
-                           base_level=elf.base_level, square_c=elf.square_c, compact_supp=elf.compact_supp)
+                           square_c=elf.square_c, compact_supp=elf.compact_supp)
             
             # appending residual variance, entropy and rms
             residual_variance.append(var)
@@ -334,12 +341,17 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             print('\nsuccess: {0}'.format(sol['success']))
             print('\nstatus: {0}'.format(sol['status']))
             print('\nmessage: {0}'.format(sol['message']))
-            print('\nnfev: {0}'.format(sol['nfev']))
+            #print('\nnfev: {0}'.format(sol['nfev']))
             if sol['success']: break
         
         print('\n \n' + '#'*90)    
         print('FINAL RESULTS:')
-        print('#'*90)
+        print('#'*90 + '\n')
+
+        print('Residual RMS: {0}'.format(residual_rms[-1]))
+        print('Residual Variance: {0}'.format(residual_variance[-1]))
+        print('Residual Entropy: {0}'.format(residual_entropy[-1]))
+        print('Total elapsed time: {0} [s]'.format(time.time()-t0))
         
         # plots generation
         solution_plot(elf.dfunc, opt_c, opt_sig, elf.xc, elf.yc, dims=elf.dims, base_level=elf.base_level, 
