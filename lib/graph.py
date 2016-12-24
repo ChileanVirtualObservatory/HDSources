@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from utils import phi, evaluate
+from utils import phi, u_eval
 
 
 ##################################################################
@@ -39,19 +39,20 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, mas
     len_xe = len(_xe); len_ye = len(_ye)
     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False)
     xe = Xe.ravel(); ye = Ye.ravel()
+    points = np.vstack([xe,ye]).T
     Nc = len(xc)
     Ne = len(xe)
 
     # approximation
     if square_c: c = c**2
-    u = evaluate(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig) + base_level
+    u = u_eval(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig) + base_level
     u = u.reshape(len_xe, len_ye)
 
     # real data
-    f = dfunc(_xe, _ye)
+    f = dfunc(points).reshape(dims)
 
     # residual
-    res = f-u
+    res = f-u+base_level
 
 
     # unusable pixels are fixed to 0
@@ -85,7 +86,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, mas
     # residual plot
     plt.subplot(1,3,3)
     ax = plt.gca()
-    im = ax.imshow(res, vmin=-0.1, vmax=0.1)
+    im = ax.imshow(res, vmin=0., vmax=1.)
     plt.title('Residual')
     plt.axis('off')
     divider = make_axes_locatable(ax)
