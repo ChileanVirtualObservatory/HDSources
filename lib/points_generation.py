@@ -62,11 +62,11 @@ def random_centers_generation(data, n_centers, base_level=None, power=2.):
     # center points positions
     x = np.linspace(0., 1., m+2, endpoint=True)[1:-1]
     y = np.linspace(0., 1., n+2, endpoint=True)[1:-1]
-    X,Y  = np.meshgrid(x,y)
+    X,Y  = np.meshgrid(x, y, indexing='ij')
     points_positions = np.vstack( [ X.ravel(), Y.ravel() ]).T
     
     # array with indexes of such centers
-    points_indexes = np.arange(0,points_positions.shape[0])
+    points_indexes = np.arange(0, points_positions.shape[0])
     
     # array with probabilities of selection for each center
     if isinstance(mask, np.ndarray):
