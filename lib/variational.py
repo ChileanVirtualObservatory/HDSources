@@ -193,13 +193,13 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             delta_sig = np.linalg.norm(opt_sig-elf.sig)
 
             # searching for noisy gaussians (and removing them)
-            mask = np.abs(opt_sig)<1.
-            if np.any(~mask):
-                print('{0} noisy gaussians detected and removed! \n'.format(np.sum(~mask)))
-                opt_theta_xc = opt_theta_xc[mask]
-                opt_theta_yc = opt_theta_yc[mask]
-                opt_c = opt_c[mask]
-                opt_sig = opt_sig[mask]
+            #mask = np.abs(opt_sig)<1.
+            #if np.any(~mask):
+            #    print('{0} noisy gaussians detected and removed! \n'.format(np.sum(~mask)))
+            #    opt_theta_xc = opt_theta_xc[mask]
+            #    opt_theta_yc = opt_theta_yc[mask]
+            #    opt_c = opt_c[mask]
+            #    opt_sig = opt_sig[mask]
 
             # update of best parameters
             elf.set_theta(opt_theta_xc, opt_theta_yc)
