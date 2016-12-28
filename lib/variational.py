@@ -182,8 +182,8 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
 
             old_xc = elf.xc
             old_yc = elf.yc
-            new_xc = elf.xc0 + elf.delta * np.sin(opt_theta_xc)
-            new_yc = elf.yc0 + elf.delta * np.sin(opt_theta_yc)
+            new_xc = elf.xc0 + elf.deltax * np.sin(opt_theta_xc)
+            new_yc = elf.yc0 + elf.deltay * np.sin(opt_theta_yc)
             
             # variation centers, c and sig
             delta_theta_xc = np.linalg.norm(opt_theta_xc-elf.theta_xc)
