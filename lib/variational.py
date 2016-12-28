@@ -58,7 +58,7 @@ def d2psi(x, lamb=1.):
 #################################################################
 class ELFunc():
     def __init__(self, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
-                 a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, delta=0.05, compact_supp=False):
+                 a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, pix_freedom=1., compact_supp=False):
 
         f0 = dfunc( np.vstack([xe,ye]).T )
         fb = dfunc( np.vstack([xb,yb]).T )
@@ -80,7 +80,8 @@ class ELFunc():
         self.xc = xc; self.yc = yc
         self.xc0 = xc; self.yc0 = yc
         self.theta_xc = np.zeros(Nc); self.theta_yc = np.zeros(Nc)
-        self.delta = delta
+        self.deltax = pix_freedom * 1./dims[0]
+        self.deltay = pix_freedom * 1./dims[1]
         self.c = c0
         self.sig = sig0
         self.d1psi1 = d1psi1
@@ -96,8 +97,8 @@ class ELFunc():
 
 
     def set_centers(self, theta_xc, theta_yc):
-        self.xc = self.xc0 + self.delta * np.sin(theta_xc)
-        self.yc = self.yc0 + self.delta * np.sin(theta_yc)   
+        self.xc = self.xc0 + self.deltax * np.sin(theta_xc)
+        self.yc = self.yc0 + self.deltay * np.sin(theta_yc)   
 
 
     def set_theta(self, theta_xc, theta_yc):
@@ -118,8 +119,8 @@ class ELFunc():
         theta_xc = params[0:N]
         theta_yc = params[N:2*N]
 
-        xc = self.xc0 + self.delta * np.sin(theta_xc)
-        yc = self.yc0 + self.delta * np.sin(theta_yc)
+        xc = self.xc0 + self.deltax * np.sin(theta_xc)
+        yc = self.yc0 + self.deltay * np.sin(theta_yc)
         
         xe = self.xe; ye = self.ye
         xb = self.xb; yb = self.yb
