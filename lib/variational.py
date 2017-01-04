@@ -56,7 +56,7 @@ def d2psi(x, lamb=1.):
 #################################################################
 # Euler-Lagrange class definition
 #################################################################
-class ELFunc():
+class ELModel():
     def __init__(self, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
                  a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, pix_freedom=1., compact_supp=False):
 
@@ -114,6 +114,18 @@ class ELFunc():
         self.sig = sig
 
 
+    def set_params(self, params):
+        N = len(params)/4
+        self.theta_xc = params[0:N]
+        self.theta_yc = params[N:2*N]
+        self.c = params[2*N:3*N]
+        self.sig = params[3*N:4*N]
+
+
+    def get_params(self):
+        return np.concatenate([self.theta_xc, self.theta_yc, self.c, self.sig])
+
+
     def F(self, params):
         N = len(params)/4
         theta_xc = params[0:N]
@@ -158,8 +170,11 @@ class ELFunc():
 
 # NOTE: ADD VERBOSITY LEVEL
 
-def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000, mask=None, verbose=True):
+def elm_solver(elm, method='exact', n_iter=None, max_iter=100000, step_iter=None, mask=None, verbose=True):
     t0 = time.time()
+
+    if step_iter is None:
+        step_iter = int(max_iter/10)
 
     if method=='exact':
         residual_variance = []
@@ -172,26 +187,25 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             print('Results after {0} iterations'.format(it))
             print('#'*90)
             # lm optimization
-            sol = sp.optimize.root(elf.F, np.concatenate([elf.theta_xc, elf.theta_yc, elf.c, elf.sig]), 
-                                   method='lm', options={'maxiter':step_iter})
+            sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options={'maxiter':step_iter})
             sol_length = len(sol.x)/4
             opt_theta_xc = sol.x[0:sol_length]
             opt_theta_yc = sol.x[sol_length:2*sol_length]
             opt_c = sol.x[2*sol_length:3*sol_length]
             opt_sig = sol.x[3*sol_length:4*sol_length]
 
-            old_xc = elf.xc
-            old_yc = elf.yc
-            new_xc = elf.xc0 + elf.deltax * np.sin(opt_theta_xc)
-            new_yc = elf.yc0 + elf.deltay * np.sin(opt_theta_yc)
+            old_xc = elm.xc
+            old_yc = elm.yc
+            new_xc = elm.xc0 + elm.deltax * np.sin(opt_theta_xc)
+            new_yc = elm.yc0 + elm.deltay * np.sin(opt_theta_yc)
             
             # variation centers, c and sig
-            delta_theta_xc = np.linalg.norm(opt_theta_xc-elf.theta_xc)
-            delta_theta_yc = np.linalg.norm(opt_theta_yc-elf.theta_yc)
+            delta_theta_xc = np.linalg.norm(opt_theta_xc-elm.theta_xc)
+            delta_theta_yc = np.linalg.norm(opt_theta_yc-elm.theta_yc)
             delta_xc = np.linalg.norm(new_xc-old_xc)
             delta_yc = np.linalg.norm(new_yc-old_yc)
-            delta_c = np.linalg.norm(opt_c-elf.c)
-            delta_sig = np.linalg.norm(opt_sig-elf.sig)
+            delta_c = np.linalg.norm(opt_c-elm.c)
+            delta_sig = np.linalg.norm(opt_sig-elm.sig)
 
             # searching for noisy gaussians (and removing them)
             #mask = np.abs(opt_sig)<1.
@@ -203,14 +217,14 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
             #    opt_sig = opt_sig[mask]
 
             # update of best parameters
-            elf.set_theta(opt_theta_xc, opt_theta_yc)
-            elf.set_centers(opt_theta_xc, opt_theta_yc)
-            elf.set_c(opt_c)
-            elf.set_sig(opt_sig)
+            elm.set_theta(opt_theta_xc, opt_theta_yc)
+            elm.set_centers(opt_theta_xc, opt_theta_yc)
+            elm.set_c(opt_c)
+            elm.set_sig(opt_sig)
             
             # residual stats
-            var,entr,rms = compute_residual_stats(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims,
-                           square_c=elf.square_c, compact_supp=elf.compact_supp)
+            var,entr,rms = compute_residual_stats(elm.dfunc, elm.c, elm.sig, elm.xc, elm.yc, dims=elm.dims,
+                           square_c=elm.square_c, compact_supp=elm.compact_supp)
             
             # appending residual variance, entropy and rms
             residual_variance.append(var)
@@ -239,8 +253,8 @@ def el_solver(elf, method='exact', n_iter=None, step_iter=1000, max_iter=100000,
         print('Total elapsed time: {0} [s]'.format(time.time()-t0))
         
         # plots generation
-        solution_plot(elf.dfunc, elf.c, elf.sig, elf.xc, elf.yc, dims=elf.dims, base_level=elf.base_level, 
-                      mask=mask, square_c=elf.square_c, compact_supp=elf.compact_supp)
-        params_plot(elf.c, elf.sig, elf.xc, elf.yc, square_c=elf.square_c)
-        params_distribution_plot(elf.c, elf.sig, square_c=elf.square_c)
+        solution_plot(elm.dfunc, elm.c, elm.sig, elm.xc, elm.yc, dims=elm.dims, base_level=elm.base_level, 
+                      mask=mask, square_c=elm.square_c, compact_supp=elm.compact_supp)
+        params_plot(elm.c, elm.sig, elm.xc, elm.yc, square_c=elm.square_c)
+        params_distribution_plot(elm.c, elm.sig, square_c=elm.square_c)
         residual_plot(residual_variance, residual_entropy, residual_rms, iter_list[0:len(residual_rms)])
