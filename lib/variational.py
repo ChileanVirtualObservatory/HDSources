@@ -57,7 +57,7 @@ def d2psi(x, lamb=1.):
 # Euler-Lagrange class definition
 #################################################################
 class ELModel():
-    def __init__(self, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
+    def __init__(self, data, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
                  a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, pix_freedom=1., compact_supp=False):
 
         f0 = dfunc( np.vstack([xe,ye]).T )
@@ -71,6 +71,7 @@ class ELModel():
 
         
         # saving important atributes
+        self.data = data
         self.dfunc = dfunc
         self.dims = dims
         self.f0 = f0
@@ -223,7 +224,7 @@ def elm_solver(elm, method='exact', n_iter=None, max_iter=100000, step_iter=None
             elm.set_sig(opt_sig)
             
             # residual stats
-            var,entr,rms = compute_residual_stats(elm.dfunc, elm.c, elm.sig, elm.xc, elm.yc, dims=elm.dims,
+            var,entr,rms = compute_residual_stats(elm.data, elm.xc, elm.yc, elm.c, elm.sig, dims=elm.dims,
                            square_c=elm.square_c, compact_supp=elm.compact_supp)
             
             # appending residual variance, entropy and rms

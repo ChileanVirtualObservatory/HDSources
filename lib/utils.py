@@ -126,28 +126,22 @@ def estimate_variance(data):
     return np.std(data)**2
 
 
-def compute_residual_stats(dfunc, c, sig, xc, yc, dims, square_c=True, compact_supp=True, resolution=1):
+def compute_residual_stats(data, xc, yc, c, sig, dims, square_c=True, compact_supp=True):
     """
     Computes the residual stats between appproximation and real data
     """
 
-    _xe = np.linspace(0., 1., resolution*dims[0]+2)[1:-1]
-    _ye = np.linspace(0., 1., resolution*dims[1]+2)[1:-1]
-    len_xe = len(_xe); len_ye = len(_ye)
+    _xe = np.linspace(0., 1., dims[0]+2)[1:-1]
+    _ye = np.linspace(0., 1., dims[1]+2)[1:-1]
     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False)
     xe = Xe.ravel(); ye = Ye.ravel()
-    Nc = len(xc)
-    Ne = len(xe)
-
-    points = np.vstack([xe,ye]).T
-    f0 = dfunc(points).reshape(len_xe,len_ye)
 
     if square_c: c = c**2
     u = u_eval(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig)
-    u = u.reshape(len_xe, len_ye)
+    u = u.reshape(dims)
    
  
-    residual = f0-u
+    residual = data-u
     return (estimate_variance(residual), 
             estimate_entropy(residual),
             estimate_rms(residual))
