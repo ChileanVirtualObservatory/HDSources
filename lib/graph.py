@@ -12,6 +12,7 @@ supp = 5.      # gaussians support
 minsig = 0.001 # guassians minimal broadening
 
 
+
 def plotter(dfunc, c, sig, xc, resolution=10, title=None):
     """
     Helper function to visualize the quality of the solution
@@ -30,6 +31,7 @@ def plotter(dfunc, c, sig, xc, resolution=10, title=None):
     plt.title(title)
     plt.legend(bbox_to_anchor=(1.3, 1.0))
     plt.show()
+
 
 
 def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, mask=None, 
@@ -95,6 +97,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, mas
     plt.show()
 
 
+
 def params_plot(c, sig, xc, yc, square_c=True, remove_outlier=True):
     if square_c: c = c**2
     if remove_outlier:
@@ -147,6 +150,7 @@ def params_distribution_plot(c, sig, square_c=True, remove_outlier=True):
     plt.show()
 
 
+
 def residual_plot(residual_variance, residual_entropy, residual_rms, iter_list):
     plt.figure(figsize=(12,5))
     plt.subplot(1,3,1)
@@ -162,6 +166,7 @@ def residual_plot(residual_variance, residual_entropy, residual_rms, iter_list):
     plt.plot(iter_list, residual_entropy, 'ro-')
     plt.title('Residual entropy')
     plt.show()
+
 
 
 def points_plot(data, center_points=None, collocation_points=None, boundary_points=None, title=None):
@@ -202,4 +207,57 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
         plt.axis('off')
     #plt.colorbar(im, cax=cax)
     #fig.legend(bbox_to_anchor=(1.2, 1.0))
+    plt.show()
+
+
+
+def components_plot(elm, data, components_dict, n_comp, dims, resolution=1, n_levels=5):
+    xc = elm.xc; yc = elm.yc; c = elm.c; sig = elm.sig
+    _xe = np.linspace(0., 1., resolution*dims[0])[1:-1]
+    _ye = np.linspace(0., 1., resolution*dims[1])[1:-1]
+    len_xe = len(_xe); len_ye = len(_ye)
+    Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
+    xe = Xe.ravel(); ye = Ye.ravel()
+    Nc = len(xc)
+    Ne = len(xe)
+    
+    """ 
+    Computing distance matrices
+    """
+    #distance matrices
+    Dx = np.empty((Ne,Nc))
+    Dy = np.empty((Ne,Nc))
+    for k in range(Ne):
+        Dx[k,:] = xe[k]-xc
+        Dy[k,:] = ye[k]-yc
+    """
+    Computing the Phi matrix
+    """
+    if elm.square_c: c = c**2
+    if elm.compact_supp: phi_m = phi(Dx, Dy, sig.reshape(1,-1))
+    else: phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)    
+    
+    plt.figure(figsize=(10,10))
+    plt.title('{0} components solution'.format(n_comp))
+    plt.axis('off')
+    ax = plt.subplot(1,1,1)
+    ax.imshow(data, cmap=plt.cm.gray)
+    color = plt.cm.rainbow(np.linspace(0.,1.,n_comp))
+    levels = np.linspace(1.05*base_level, 0.95, n_levels)
+    
+    
+    for i,indexes in enumerate(components_dict[n_comp]):
+        _phi_m = phi_m.T[indexes].T
+        _c = c[indexes]
+        _u = np.dot(_phi_m, _c) + elm.base_level
+        _u = _u.reshape(len_xe, len_ye)
+        
+        ax.contour(_u, levels=levels, colors=[color[i]])
+        #plt.subplot(n_comp,1, i+1)
+        #ax = plt.gca()
+        #im = ax.imshow(_u, vmin=0., vmax=1.)
+        #plt.axis('off')
+        #divider = make_axes_locatable(ax)
+        #cax = divider.append_axes("right", size="5%", pad=0.05)
+        #plt.colorbar(im, cax=cax)
     plt.show()
