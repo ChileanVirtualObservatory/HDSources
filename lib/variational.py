@@ -57,8 +57,9 @@ def d2psi(x, lamb=1.):
 # Euler-Lagrange class definition
 #################################################################
 class ELModel():
-    def __init__(self, data, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, d1psi2=None, d2psi2=None,
-                 a=0., b=0., lamb1=1., lamb2=1., base_level=0, square_c=True, pix_freedom=1., compact_supp=False):
+    def __init__(self, data, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, 
+                d1psi2=None, d2psi2=None, a=0., b=0., lamb1=1., lamb2=1., base_level=0,
+                square_c=True, minsig=0.001, pix_freedom=1., compact_supp=False):
 
         f0 = dfunc( np.vstack([xe,ye]).T )
         fb = dfunc( np.vstack([xb,yb]).T )
@@ -72,6 +73,10 @@ class ELModel():
         
         # saving important atributes
         self.data = data
+        if base_level > 0:
+            self.mask = data > base_level
+        else: 
+            self.mask = None
         self.dfunc = dfunc
         self.dims = dims
         self.f0 = f0
@@ -94,6 +99,7 @@ class ELModel():
         self.lamb2 = lamb2
         self.base_level = base_level
         self.square_c = square_c
+        self.minsig = minsig
         self.compact_supp = compact_supp
 
 
@@ -125,6 +131,35 @@ class ELModel():
 
     def get_params(self):
         return np.concatenate([self.theta_xc, self.theta_yc, self.c, self.sig])
+
+
+    def get_residual_stats(self):
+        _xe = np.linspace(0., 1., self.dims[0]+2)[1:-1]
+        _ye = np.linspace(0., 1., self.dims[1]+2)[1:-1]
+        Xe,Ye = np.meshgrid(_xe, _ye, sparse=False)
+        xe = Xe.ravel(); ye = Ye.ravel()
+
+        # unpacking needed parameters
+        supp = self.compact_supp
+        mingsig = self.minsig
+
+        xc = self.xc
+        yc = self.yc
+        if self.square_c: c = self.c**2
+        else: c = self.c
+        sig = self.sig
+
+        u = u_eval(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig)
+        u = u.reshape(self.dims)
+
+        if self.mask is not None:
+            residual = self.data[self.mask]-u[self.mask]
+        else:
+            residual = self.data-u
+        
+        return (estimate_variance(residual), 
+                estimate_entropy(residual),
+                estimate_rms(residual))
 
 
     def F(self, params):
@@ -163,6 +198,40 @@ class ELModel():
             el += ne.evaluate('2*b*(2* tmp3*tmp1  + tmp4*tmp2)')
         
         return el
+
+    def _F(self, params):
+        N = len(params)/4
+        xc = params[0:N]
+        yc = params[N:2*N]
+
+        #if self.square_c: c = params[2*N:3*N]**2
+        #else: c = params[2*N:3*N]
+        c = params[2*N:3*N]
+        sig = params[3*N:4*N]
+
+        xe = self.xe; ye = self.ye
+        xb = self.xb; yb = self.yb
+
+        # computing u, ux, uy, ...
+        u = u_eval(c, sig, xe, ye, xc, yc, supp=5., sig0=0.001) + self.base_level
+        
+        # computing the EL equation
+        f0 = self.f0; a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
+
+        tmp1 = ne.evaluate('u-f0')
+        tmp2 = self.d1psi1(tmp1, lamb1)
+        el = ne.evaluate('2*tmp1 + a*tmp2')
+
+        if self.b!=0.:
+            laplacian = ne.evaluate('ux**2 + uy**2')
+            tmp1 = ne.evaluate('((ux*uxx + uy*uxy)*ux + (ux*uxy + uy+uyy)*uy)')
+            tmp2 = ne.evaluate('uxx + uyy')
+            tmp3 = self.d2psi2(laplacian, lamb2)
+            tmp4 = self.d1psi2(laplacian, lamb2)
+            el += ne.evaluate('2*b*(2* tmp3*tmp1  + tmp4*tmp2)')
+        
+        return el
+
     
    
 #################################################################
@@ -217,15 +286,16 @@ def elm_solver(elm, method='exact', n_iter=None, max_iter=100000, step_iter=None
             #    opt_c = opt_c[mask]
             #    opt_sig = opt_sig[mask]
 
-            # update of best parameters
+            # update to best parameters
             elm.set_theta(opt_theta_xc, opt_theta_yc)
             elm.set_centers(opt_theta_xc, opt_theta_yc)
             elm.set_c(opt_c)
             elm.set_sig(opt_sig)
             
             # residual stats
-            var,entr,rms = compute_residual_stats(elm.data, elm.xc, elm.yc, elm.c, elm.sig, dims=elm.dims,
-                           square_c=elm.square_c, compact_supp=elm.compact_supp)
+            var,entr,rms = elm.get_residual_stats()
+            # var,entr,rms = compute_residual_stats(elm.data, elm.xc, elm.yc, elm.c, elm.sig, dims=elm.dims,
+            #                square_c=elm.square_c, compact_supp=elm.compact_supp)
             
             # appending residual variance, entropy and rms
             residual_variance.append(var)
