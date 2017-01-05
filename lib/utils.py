@@ -133,15 +133,14 @@ def compute_residual_stats(data, xc, yc, c, sig, dims, square_c=True, compact_su
 
     _xe = np.linspace(0., 1., dims[0]+2)[1:-1]
     _ye = np.linspace(0., 1., dims[1]+2)[1:-1]
-    Xe,Ye = np.meshgrid(_xe, _ye, sparse=False)
+    Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
     xe = Xe.ravel(); ye = Ye.ravel()
 
     if square_c: c = c**2
     u = u_eval(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig)
     u = u.reshape(dims)
-   
- 
     residual = data-u
+    
     return (estimate_variance(residual), 
             estimate_entropy(residual),
             estimate_rms(residual))
