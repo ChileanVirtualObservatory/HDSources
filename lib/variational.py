@@ -105,7 +105,9 @@ class ELModel():
 
     def set_centers(self, theta_xc, theta_yc):
         self.xc = self.xc0 + self.deltax * np.sin(theta_xc)
-        self.yc = self.yc0 + self.deltay * np.sin(theta_yc)   
+        self.yc = self.yc0 + self.deltay * np.sin(theta_yc)  
+        # self.xc = self.xc0 + self.deltax * np.sin(np.pi* np.tanh(theta_xc))
+        # self.yc = self.yc0 + self.deltay * np.sin(np.pi* np.tanh(theta_yc))  
 
 
     def set_theta(self, theta_xc, theta_yc):
@@ -169,6 +171,9 @@ class ELModel():
 
         xc = self.xc0 + self.deltax * np.sin(theta_xc)
         yc = self.yc0 + self.deltay * np.sin(theta_yc)
+
+        # xc = self.xc0 + self.deltax * np.sin(np.pi* np.tanh(theta_xc))
+        # yc = self.yc0 + self.deltay * np.sin(np.pi* np.tanh(theta_yc))
         
         xe = self.xe; ye = self.ye
         xb = self.xb; yb = self.yb
@@ -268,14 +273,16 @@ def elm_solver(elm, method='exact', n_iter=None, max_iter=100000, step_iter=None
             old_yc = elm.yc
             new_xc = elm.xc0 + elm.deltax * np.sin(opt_theta_xc)
             new_yc = elm.yc0 + elm.deltay * np.sin(opt_theta_yc)
+            # new_xc = elm.xc0 + elm.deltax * np.sin(np.pi * np.tanh(opt_theta_xc))
+            # new_yc = elm.yc0 + elm.deltay * np.sin(np.pi * np.tanh(opt_theta_yc))
             
             # variation centers, c and sig
-            delta_theta_xc = np.linalg.norm(opt_theta_xc-elm.theta_xc)
-            delta_theta_yc = np.linalg.norm(opt_theta_yc-elm.theta_yc)
-            delta_xc = np.linalg.norm(new_xc-old_xc)
-            delta_yc = np.linalg.norm(new_yc-old_yc)
-            delta_c = np.linalg.norm(opt_c-elm.c)
-            delta_sig = np.linalg.norm(opt_sig-elm.sig)
+            delta_theta_xc = np.linalg.norm(opt_theta_xc-elm.theta_xc) / np.linalg.norm(elm.theta_xc)
+            delta_theta_yc = np.linalg.norm(opt_theta_yc-elm.theta_yc) / np.linalg.norm(elm.theta_yc)
+            delta_xc = np.linalg.norm(new_xc-old_xc) / np.linalg.norm(old_xc)
+            delta_yc = np.linalg.norm(new_yc-old_yc) / np.linalg.norm(old_yc)
+            delta_c = np.linalg.norm(opt_c-elm.c) / np.linalg.norm(elm.c)
+            delta_sig = np.linalg.norm(opt_sig-elm.sig) / np.linalg.norm(elm.sig)
 
             # searching for noisy gaussians (and removing them)
             #mask = np.abs(opt_sig)<1.
