@@ -6,39 +6,33 @@ import numexpr as ne
 from math import sqrt, exp
 
 
-##################################################################
-# GLOBAL VARIABLES
-##################################################################
-supp = 5.      # gaussians support
-minsig = 0.001 # guassians minimal broadening
-
-@numba.jit('float64[:] (float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64, float64)', nopython=True)
-def u_eval(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig):
+@numba.jit('float64[:] (float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64)', nopython=True)
+def u_eval(c, sig, xc, yc, xe, ye, support=5):
     m = len(xe)
     n = len(xc)
     ret = np.zeros(m)
     for i in range(m):
         for j in range(n):
             dist2 = (xe[i]-xc[j])**2 + (ye[i]-yc[j])**2
-            if  dist2 > supp**2 * sig[j]**2: continue
-            ret[i] += c[j] * exp( -dist2 / (2* (sig0**2 + sig[j]**2) ) )
+            if  dist2 > support**2 * sig[j]**2: continue
+            ret[i] += c[j] * exp( -dist2 / (2* sig[j]**2 ) )
     return ret 
 
 
-@numba.jit('float64[:,:] (float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64, float64)', nopython=True)
-def u_eval_full(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig):
+@numba.jit('float64[:,:] (float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64)', nopython=True)
+def u_eval_full(c, sig, xc, yc, xe, ye, support=5):
     m = len(xe)
     n = len(xc)
     ret = np.zeros((6,m))
     for i in range(m):
         for j in range(n):
             dist2 = (xe[i]-xc[j])**2 + (ye[i]-yc[j])**2
-            if  dist2 > supp**2 * sig[j]**2: continue
+            if  dist2 > support**2 * sig[j]**2: continue
             # common terms
-            aux1 = (-1./(sig0**2+sig[j]**2))
+            aux1 = (-1./(sig[j]**2))
             aux2 = aux1**2
             # u evaluation
-            ret[0,i] += c[j] * exp( -dist2 / (2* (sig0**2 + sig[j]**2) ) )
+            ret[0,i] += c[j] * exp( -dist2 / (2* sig[j]**2 ) )
             # ux evaluation
             ret[1,i] += aux1 * ret[0,i] * (xe[i]-xc[j])
             # uy evaluation
@@ -46,51 +40,11 @@ def u_eval_full(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig):
             # uxy evaluation
             ret[3,i] += aux2 * ret[0,i] * (xe[i]-xc[j])*(ye[i]-yc[j])
             # uxx evaluation (REVISAR ESTO)
-            ret[4,i] += aux2 * ret[0,i] * ((xe[i]-xc[j])**2 - sig0**2 - sig[j]**2)
+            ret[4,i] += aux2 * ret[0,i] * ((xe[i]-xc[j])**2 - sig[j]**2)
             # uyy evaluation (REVISAR ESTO)
-            ret[5,i] += aux2 * ret[0,i] * ((ye[i]-yc[j])**2 - sig0**2 - sig[j]**2)
+            ret[5,i] += aux2 * ret[0,i] * ((ye[i]-yc[j])**2 - sig[j]**2)
     return ret
 
-
-
-###################################################################
-# RBF (Gaussian) functions and its derivatives
-#
-# NOTE: For the compact support implementation, we
-# take the fact that gaussian functions decrease faster
-# than polynomial functions
-###################################################################
-
-def phi(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('exp(-(x**2+y**2)/(2*(sig0**2+sig**2)))')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
-    return retval
-
-def phix(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * x')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
-    return retval
-
-def phiy(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(-1./(sig0**2+sig**2)) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * y')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
-    return retval
-
-#same as phiyx
-def phixy(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x*y)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
-    return retval
-
-def phixx(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (x**2 - sig0**2 - sig**2)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
-    return retval
-
-def phiyy(x, y, sig, sig0=minsig, supp=5.):
-    retval = ne.evaluate('(1./(sig0**2+sig**2)**2) * exp(-(x**2+y**2)/(2*(sig0**2+sig**2))) * (y**2 - sig0**2 - sig**2)')
-    if supp!=0.: retval[retval < np.exp(-0.5 * supp**2)] = 0.
-    return retval
 
 
 def estimate_rms(data):
@@ -126,7 +80,7 @@ def estimate_variance(data):
     return np.std(data)**2
 
 
-def compute_residual_stats(data, xc, yc, c, sig, dims, square_c=True, compact_supp=True):
+def compute_residual_stats(data, xc, yc, c, sig, dims, support=5):
     """
     Computes the residual stats between appproximation and real data
     """
@@ -136,8 +90,7 @@ def compute_residual_stats(data, xc, yc, c, sig, dims, square_c=True, compact_su
     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
     xe = Xe.ravel(); ye = Ye.ravel()
 
-    if square_c: c = c**2
-    u = u_eval(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig)
+    u = u_eval(c, sig, xc, yc, xe, ye, support=support)
     u = u.reshape(dims)
     residual = data-u
     
@@ -186,3 +139,10 @@ def load_data(fit_path):
             return  _dfunc(points[:,::-1])
     
     return x, y, data, dfunc
+
+
+def logistic(x):
+    return 1. / (1. + np.exp(-x))
+
+def logit(x):
+    return np.log(x / (1-x))

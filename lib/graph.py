@@ -2,14 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from utils import phi, u_eval
-
-
-##################################################################
-# GLOBAL VARIABLES
-##################################################################
-supp = 5.      # gaussians support
-minsig = 0.001 # guassians minimal broadening
+from utils import u_eval
 
 
 
@@ -34,8 +27,8 @@ def plotter(dfunc, c, sig, xc, resolution=10, title=None):
 
 
 
-def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, mask=None, 
-                 resolution=1, title=None, compact_supp=True):
+def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None, 
+                 resolution=1, title=None, support=5.):
     _xe = np.linspace(0., 1., resolution*dims[0]+2)[1:-1]
     _ye = np.linspace(0., 1., resolution*dims[1]+2)[1:-1]
     len_xe = len(_xe); len_ye = len(_ye)
@@ -46,8 +39,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, mas
     Ne = len(xe)
 
     # approximation
-    if square_c: c = c**2
-    u = u_eval(c, sig, xe, ye, xc, yc, supp=supp, sig0=minsig) + base_level
+    u = u_eval(c, sig, xc, yc, xe, ye, support=support) + base_level
     u = u.reshape(len_xe, len_ye)
 
     # real data
@@ -98,8 +90,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., square_c=True, mas
 
 
 
-def params_plot(c, sig, xc, yc, square_c=True, remove_outlier=True):
-    if square_c: c = c**2
+def params_plot(c, sig, xc, yc, remove_outlier=True):
     if remove_outlier:
         # just keeping values less than 10 times the mean
         c_med = np.median(c)
@@ -130,8 +121,7 @@ def params_plot(c, sig, xc, yc, square_c=True, remove_outlier=True):
     plt.show()
  
 
-def params_distribution_plot(c, sig, square_c=True, remove_outlier=True):
-    if square_c: c = c**2
+def params_distribution_plot(c, sig, remove_outlier=True):
     if remove_outlier:
         # just keeping values less than 10 times the median
         c_med = np.median(c)
@@ -211,53 +201,53 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
 
 
 
-def components_plot(elm, data, components_dict, n_comp, dims, resolution=1, n_levels=5):
-    xc = elm.xc; yc = elm.yc; c = elm.c; sig = elm.sig
-    _xe = np.linspace(0., 1., resolution*dims[0])[1:-1]
-    _ye = np.linspace(0., 1., resolution*dims[1])[1:-1]
-    len_xe = len(_xe); len_ye = len(_ye)
-    Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
-    xe = Xe.ravel(); ye = Ye.ravel()
-    Nc = len(xc)
-    Ne = len(xe)
+# def components_plot(elm, data, components_dict, n_comp, dims, resolution=1, n_levels=5):
+#     xc = elm.xc; yc = elm.yc; c = elm.c; sig = elm.sig
+#     _xe = np.linspace(0., 1., resolution*dims[0])[1:-1]
+#     _ye = np.linspace(0., 1., resolution*dims[1])[1:-1]
+#     len_xe = len(_xe); len_ye = len(_ye)
+#     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
+#     xe = Xe.ravel(); ye = Ye.ravel()
+#     Nc = len(xc)
+#     Ne = len(xe)
     
-    """ 
-    Computing distance matrices
-    """
-    #distance matrices
-    Dx = np.empty((Ne,Nc))
-    Dy = np.empty((Ne,Nc))
-    for k in range(Ne):
-        Dx[k,:] = xe[k]-xc
-        Dy[k,:] = ye[k]-yc
-    """
-    Computing the Phi matrix
-    """
-    if elm.square_c: c = c**2
-    if elm.compact_supp: phi_m = phi(Dx, Dy, sig.reshape(1,-1))
-    else: phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)    
+#     """ 
+#     Computing distance matrices
+#     """
+#     #distance matrices
+#     Dx = np.empty((Ne,Nc))
+#     Dy = np.empty((Ne,Nc))
+#     for k in range(Ne):
+#         Dx[k,:] = xe[k]-xc
+#         Dy[k,:] = ye[k]-yc
+#     """
+#     Computing the Phi matrix
+#     """
+#     c = c**2
+#     if elm.compact_supp: phi_m = phi(Dx, Dy, sig.reshape(1,-1))
+#     else: phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)    
     
-    plt.figure(figsize=(10,10))
-    plt.title('{0} components solution'.format(n_comp))
-    plt.axis('off')
-    ax = plt.subplot(1,1,1)
-    ax.imshow(data, cmap=plt.cm.gray)
-    color = plt.cm.rainbow(np.linspace(0.,1.,n_comp))
-    levels = np.linspace(1.05*base_level, 0.95, n_levels)
+#     plt.figure(figsize=(10,10))
+#     plt.title('{0} components solution'.format(n_comp))
+#     plt.axis('off')
+#     ax = plt.subplot(1,1,1)
+#     ax.imshow(data, cmap=plt.cm.gray)
+#     color = plt.cm.rainbow(np.linspace(0.,1.,n_comp))
+#     levels = np.linspace(1.05*elm.base_level, 0.95, n_levels)
     
     
-    for i,indexes in enumerate(components_dict[n_comp]):
-        _phi_m = phi_m.T[indexes].T
-        _c = c[indexes]
-        _u = np.dot(_phi_m, _c) + elm.base_level
-        _u = _u.reshape(len_xe, len_ye)
+#     for i,indexes in enumerate(components_dict[n_comp]):
+#         _phi_m = phi_m.T[indexes].T
+#         _c = c[indexes]
+#         _u = np.dot(_phi_m, _c) + elm.base_level
+#         _u = _u.reshape(len_xe, len_ye)
         
-        ax.contour(_u, levels=levels, colors=[color[i]])
-        #plt.subplot(n_comp,1, i+1)
-        #ax = plt.gca()
-        #im = ax.imshow(_u, vmin=0., vmax=1.)
-        #plt.axis('off')
-        #divider = make_axes_locatable(ax)
-        #cax = divider.append_axes("right", size="5%", pad=0.05)
-        #plt.colorbar(im, cax=cax)
-    plt.show()
+#         ax.contour(_u, levels=levels, colors=[color[i]])
+#         #plt.subplot(n_comp,1, i+1)
+#         #ax = plt.gca()
+#         #im = ax.imshow(_u, vmin=0., vmax=1.)
+#         #plt.axis('off')
+#         #divider = make_axes_locatable(ax)
+#         #cax = divider.append_axes("right", size="5%", pad=0.05)
+#         #plt.colorbar(im, cax=cax)
+#     plt.show()
