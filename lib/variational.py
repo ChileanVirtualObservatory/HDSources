@@ -359,6 +359,12 @@ def elm_solver(elm, method='lm', max_iter=None, verbose=True):
     print('FINAL RESULTS:')
     print('#'*90 + '\n')
 
+    print('Solver Output:')
+    print('\nsuccess: {0}'.format(sol['success']))
+    print('\nstatus: {0}'.format(sol['status']))
+    print('\nmessage: {0}'.format(sol['message']))
+    print('\nnfev: {0}'.format(sol['nfev']))
+
     elapsed_time = time.time() - t0
     var,entr,rms  = elm.get_residual_stats()
 
@@ -376,7 +382,7 @@ def elm_solver(elm, method='lm', max_iter=None, verbose=True):
     
     # plots generation
     solution_plot(elm.dfunc, _c, _sig, _xc, _yc, dims=elm.dims, base_level=elm.base_level, 
-                  mask=elm.mask, support=support)
+                  support=elm.support)
     params_plot(_c, _sig, _xc, _yc)
     params_distribution_plot(_c, _sig)
     #residual_plot(residual_variance, residual_entropy, residual_rms, iter_list[0:len(residual_rms)])
