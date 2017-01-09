@@ -255,14 +255,13 @@ class ELModel():
         return el
 
     
-   
 #################################################################
 # Euler-Lagrange instansiation solver
 #################################################################
 
 # NOTE: ADD VERBOSITY LEVEL
 
-def elm_solver(elm, method='lm', max_iter=None, verbose=True):
+def elm_solver(elm, method='lm', max_nfev=None, verbose=True):
     t0 = time.time()
 
     # if step_iter is None:
@@ -340,8 +339,8 @@ def elm_solver(elm, method='lm', max_iter=None, verbose=True):
             #if sol['success']: break
 
     if method=='lm':
-        # lm optimization
-        sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options={'maxiter':max_iter})
+        # lm optimization from scipy.optimize.root
+        sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options={'maxiter':max_nfev, 'xtol':1.e-7, 'ftol':1.e-7})
         sol_length = len(sol.x)/4
         opt_theta_xc = sol.x[0:sol_length]
         opt_theta_yc = sol.x[sol_length:2*sol_length]
@@ -353,7 +352,36 @@ def elm_solver(elm, method='lm', max_iter=None, verbose=True):
         elm.set_centers(opt_theta_xc, opt_theta_yc)
         elm.set_c(opt_c)
         elm.set_sig(opt_sig)
-
+        
+    elif method=='lm2':
+        # lm optimization from scipy.optimize.least_squares
+        sol = sp.optimize.least_squares(elm.F, elm.get_params(), method='lm', max_nfev=max_nfev, verbose=True)
+        sol_length = len(sol.x)/4
+        opt_theta_xc = sol.x[0:sol_length]
+        opt_theta_yc = sol.x[sol_length:2*sol_length]
+        opt_c = sol.x[2*sol_length:3*sol_length]
+        opt_sig = sol.x[3*sol_length:4*sol_length]
+   
+        # update to best parameters
+        elm.set_theta(opt_theta_xc, opt_theta_yc)
+        elm.set_centers(opt_theta_xc, opt_theta_yc)
+        elm.set_c(opt_c)
+        elm.set_sig(opt_sig)
+     
+    elif method=='trf':
+        # lm optimization from scipy.optimize.least_squares
+        sol = sp.optimize.least_squares(elm.F, elm.get_params(), method='trf', max_nfev=max_nfev, verbose=True)
+        sol_length = len(sol.x)/4
+        opt_theta_xc = sol.x[0:sol_length]
+        opt_theta_yc = sol.x[sol_length:2*sol_length]
+        opt_c = sol.x[2*sol_length:3*sol_length]
+        opt_sig = sol.x[3*sol_length:4*sol_length]
+   
+        # update to best parameters
+        elm.set_theta(opt_theta_xc, opt_theta_yc)
+        elm.set_centers(opt_theta_xc, opt_theta_yc)
+        elm.set_c(opt_c)
+        elm.set_sig(opt_sig)
         
     print('\n \n' + '#'*90)    
     print('FINAL RESULTS:')
@@ -381,8 +409,7 @@ def elm_solver(elm, method='lm', max_iter=None, verbose=True):
     _xc, _yc, _c, _sig = elm.get_params_mapped()
     
     # plots generation
-    solution_plot(elm.dfunc, _c, _sig, _xc, _yc, dims=elm.dims, base_level=elm.base_level, 
-                  support=elm.support)
+    solution_plot(elm.dfunc, _c, _sig, _xc, _yc, dims=elm.dims, base_level=elm.base_level, support=elm.support)
     params_plot(_c, _sig, _xc, _yc)
     params_distribution_plot(_c, _sig)
     #residual_plot(residual_variance, residual_entropy, residual_rms, iter_list[0:len(residual_rms)])
