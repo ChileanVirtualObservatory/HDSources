@@ -1,5 +1,5 @@
 notebooks/.ipynb_checkpoints
-notebooks_attic/.ipynb_checkpoints/
+notebooks_attic/.ipynb_checkpoints
 docs/
 
 # trash files
@@ -32,6 +32,7 @@ docs/
 *.o
 *.tar.gz
 *.npy
+*.pkl
 
 \#*\#
 .\#*
