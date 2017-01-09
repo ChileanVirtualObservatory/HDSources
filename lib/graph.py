@@ -35,8 +35,6 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
     xe = Xe.ravel(); ye = Ye.ravel()
     points = np.vstack([xe,ye]).T
-    Nc = len(xc)
-    Ne = len(xe)
 
     # approximation
     u = u_eval(c, sig, xc, yc, xe, ye, support=support) + base_level
@@ -48,13 +46,11 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
     # residual
     res = f-u+base_level
 
-
     # unusable pixels are fixed to 0
     if mask is not None: 
         u[~mask] = 0.
         f[~mask] = 0.
         res[~mask] = 0.
-
 
     # original data plot
     plt.figure(figsize=(18,12))
@@ -121,6 +117,7 @@ def params_plot(c, sig, xc, yc, remove_outlier=True):
     plt.show()
  
 
+
 def params_distribution_plot(c, sig, remove_outlier=True):
     if remove_outlier:
         # just keeping values less than 10 times the median
@@ -158,7 +155,7 @@ def residual_plot(residual_variance, residual_entropy, residual_rms, iter_list):
     plt.show()
 
 
-
+    
 def points_plot(data, center_points=None, collocation_points=None, boundary_points=None, title=None):
     x_scale = data.shape[0]-1
     y_scale = data.shape[1]-1
@@ -200,54 +197,41 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     plt.show()
 
 
-
-# def components_plot(elm, data, components_dict, n_comp, dims, resolution=1, n_levels=5):
-#     xc = elm.xc; yc = elm.yc; c = elm.c; sig = elm.sig
-#     _xe = np.linspace(0., 1., resolution*dims[0])[1:-1]
-#     _ye = np.linspace(0., 1., resolution*dims[1])[1:-1]
-#     len_xe = len(_xe); len_ye = len(_ye)
-#     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
-#     xe = Xe.ravel(); ye = Ye.ravel()
-#     Nc = len(xc)
-#     Ne = len(xe)
     
-#     """ 
-#     Computing distance matrices
-#     """
-#     #distance matrices
-#     Dx = np.empty((Ne,Nc))
-#     Dy = np.empty((Ne,Nc))
-#     for k in range(Ne):
-#         Dx[k,:] = xe[k]-xc
-#         Dy[k,:] = ye[k]-yc
-#     """
-#     Computing the Phi matrix
-#     """
-#     c = c**2
-#     if elm.compact_supp: phi_m = phi(Dx, Dy, sig.reshape(1,-1))
-#     else: phi_m = phi(Dx, Dy, sig.reshape(1,-1), supp=0.)    
+def components_plot(elm, components_dict, n_comp, n_levels=5):
+    # get all the (mapped) parameters
+    xc, yc, c, sig = elm.get_params_mapped()
     
-#     plt.figure(figsize=(10,10))
-#     plt.title('{0} components solution'.format(n_comp))
-#     plt.axis('off')
-#     ax = plt.subplot(1,1,1)
-#     ax.imshow(data, cmap=plt.cm.gray)
-#     color = plt.cm.rainbow(np.linspace(0.,1.,n_comp))
-#     levels = np.linspace(1.05*elm.base_level, 0.95, n_levels)
+    # generating the evaluation points
+    _xe = np.linspace(0., 1., elm.dims[0]+2)[1:-1]
+    _ye = np.linspace(0., 1., elm.dims[1]+2)[1:-1]
+    len_xe = len(_xe); len_ye = len(_ye)
+    Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
+    xe = Xe.ravel(); ye = Ye.ravel()  
     
+    plt.figure(figsize=(10,10))
+    plt.title('{0} components solution'.format(n_comp))
+    plt.axis('off')
+    ax = plt.subplot(1,1,1)
+    ax.imshow(elm.data, cmap=plt.cm.gray)
+    color = plt.cm.rainbow(np.linspace(0., 1., n_comp))
+    levels = np.linspace(1.05*elm.base_level, 0.95, n_levels)
     
-#     for i,indexes in enumerate(components_dict[n_comp]):
-#         _phi_m = phi_m.T[indexes].T
-#         _c = c[indexes]
-#         _u = np.dot(_phi_m, _c) + elm.base_level
-#         _u = _u.reshape(len_xe, len_ye)
+    for i,indexes in enumerate(components_dict[n_comp]):
+        _xc = xc[indexes]
+        _yc = yc[indexes]
+        _c = c[indexes]
+        _sig = sig[indexes]
+        u = u_eval(_c, _sig, _xc, _yc, xe, ye, support=elm.support) + elm.base_level
+        _u = u.reshape(len_xe, len_ye)
         
-#         ax.contour(_u, levels=levels, colors=[color[i]])
-#         #plt.subplot(n_comp,1, i+1)
-#         #ax = plt.gca()
-#         #im = ax.imshow(_u, vmin=0., vmax=1.)
-#         #plt.axis('off')
-#         #divider = make_axes_locatable(ax)
-#         #cax = divider.append_axes("right", size="5%", pad=0.05)
-#         #plt.colorbar(im, cax=cax)
-#     plt.show()
+        ax.contour(_u, levels=levels, colors=[color[i]])
+        #plt.subplot(n_comp,1, i+1)
+        #ax = plt.gca()
+        #im = ax.imshow(_u, vmin=0., vmax=1.)
+        #plt.axis('off')
+        #divider = make_axes_locatable(ax)
+        #cax = divider.append_axes("right", size="5%", pad=0.05)
+        #plt.colorbar(im, cax=cax)
+    plt.show()
+    
