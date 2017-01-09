@@ -261,7 +261,7 @@ class ELModel():
 
 # NOTE: ADD VERBOSITY LEVEL
 
-def elm_solver(elm, method='lm', max_nfev=None, verbose=True):
+def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
     t0 = time.time()
 
     # if step_iter is None:
@@ -338,9 +338,10 @@ def elm_solver(elm, method='lm', max_nfev=None, verbose=True):
             #print('\nnfev: {0}'.format(sol['nfev']))
             #if sol['success']: break
 
-    if method=='lm':
+    if method=='standar':
         # lm optimization from scipy.optimize.root
-        sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options={'maxiter':max_nfev, 'xtol':1.e-7, 'ftol':1.e-7})
+        options = {'maxiter':max_nfev, 'xtol':1.e-7, 'ftol':1.e-7}
+        sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options=options)
         sol_length = len(sol.x)/4
         opt_theta_xc = sol.x[0:sol_length]
         opt_theta_yc = sol.x[sol_length:2*sol_length]
@@ -352,37 +353,34 @@ def elm_solver(elm, method='lm', max_nfev=None, verbose=True):
         elm.set_centers(opt_theta_xc, opt_theta_yc)
         elm.set_c(opt_c)
         elm.set_sig(opt_sig)
-        
-    elif method=='lm2':
-        # lm optimization from scipy.optimize.least_squares
-        sol = sp.optimize.least_squares(elm.F, elm.get_params(), method='lm', max_nfev=max_nfev, verbose=True)
-        sol_length = len(sol.x)/4
-        opt_theta_xc = sol.x[0:sol_length]
-        opt_theta_yc = sol.x[sol_length:2*sol_length]
-        opt_c = sol.x[2*sol_length:3*sol_length]
-        opt_sig = sol.x[3*sol_length:4*sol_length]
-   
-        # update to best parameters
-        elm.set_theta(opt_theta_xc, opt_theta_yc)
-        elm.set_centers(opt_theta_xc, opt_theta_yc)
-        elm.set_c(opt_c)
-        elm.set_sig(opt_sig)
-     
-    elif method=='trf':
-        # lm optimization from scipy.optimize.least_squares
-        sol = sp.optimize.least_squares(elm.F, elm.get_params(), method='trf', max_nfev=max_nfev, verbose=True)
-        sol_length = len(sol.x)/4
-        opt_theta_xc = sol.x[0:sol_length]
-        opt_theta_yc = sol.x[sol_length:2*sol_length]
-        opt_c = sol.x[2*sol_length:3*sol_length]
-        opt_sig = sol.x[3*sol_length:4*sol_length]
-   
-        # update to best parameters
-        elm.set_theta(opt_theta_xc, opt_theta_yc)
-        elm.set_centers(opt_theta_xc, opt_theta_yc)
-        elm.set_c(opt_c)
-        elm.set_sig(opt_sig)
-        
+    
+    elif method=='iterative':
+        for it in range(n_iter):
+            print('\n'+'#'*90)
+            print('Results after {0} iterations'.format(it+1))
+            print('#'*90)
+            
+            # lm optimization from scipy.optimize.root
+            options = {'maxiter':max_nfev, 'xtol':1.e-7, 'ftol':1.e-7}
+            sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options=options)
+            sol_length = len(sol.x)/4
+            opt_theta_xc = sol.x[0:sol_length]
+            opt_theta_yc = sol.x[sol_length:2*sol_length]
+            opt_c = sol.x[2*sol_length:3*sol_length]
+            opt_sig = sol.x[3*sol_length:4*sol_length]
+
+            # update to best parameters
+            elm.set_theta(opt_theta_xc, opt_theta_yc)
+            elm.set_centers(opt_theta_xc, opt_theta_yc)
+            elm.set_c(opt_c)
+            elm.set_sig(opt_sig)
+            
+            print('\nsuccess: {0}'.format(sol['success']))
+            print('\nstatus: {0}'.format(sol['status']))
+            print('\nmessage: {0}'.format(sol['message']))
+            print('\nnfev: {0}'.format(sol['nfev']))
+            if sol['success']: break
+            
     print('\n \n' + '#'*90)    
     print('FINAL RESULTS:')
     print('#'*90 + '\n')
