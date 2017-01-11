@@ -2,7 +2,7 @@ import numpy as np
 from utils import build_dist_matrix
 
 
-def estimate_initial_guess(center_points, dfunc, R=0.05, minsig=0.001, method='min_dist'):
+def estimate_initial_guess(center_points, dfunc, R=0.05, minsig=None, maxsig=None, method='min_dist'):
     # building the distance matrix
     dist_matrix = build_dist_matrix(center_points)
     
@@ -62,5 +62,10 @@ def estimate_initial_guess(center_points, dfunc, R=0.05, minsig=0.001, method='m
                 sig_arr[i] = minsig
             else:
                 c_arr[i] = dfunc(center_points[i])[0]/(num_neigh[i]+1)
-                sig_arr[i] = min_dist[i] 
+                if min_dist[i] < minsig:
+                    sig_arr[i] = minsig
+                elif min_dist[i] > maxsig:
+                    sig_arr[i] = maxsig
+                else:
+                    sig_arr[i] = min_dist[i]
     return (c_arr,sig_arr)
