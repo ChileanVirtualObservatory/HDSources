@@ -6,7 +6,7 @@ import numpy as np
 import numexpr as ne
 from math import sqrt, exp
 import matplotlib.pyplot as plt
-from graph import  solution_plot, params_plot, params_distribution_plot, residual_plot
+import graph as gp
 from utils import *
 
 
@@ -209,11 +209,11 @@ class ELModel():
             print('Total elapsed time: {0} [s]'.format(self.elapsed_time))
         
         if solution_plot:
-            solution_plot(self.dfunc, _c, _sig, _xc, _yc, dims=self.dims, base_level=self.base_level, support=self.support)
+            gp.solution_plot(self.dfunc, _c, _sig, _xc, _yc, dims=self.dims, base_level=self.base_level, support=self.support)
         
         if params_plot:
-            params_plot(_c, _sig, _xc, _yc)
-            params_distribution_plot(_c, _sig)
+            gp.params_plot(_c, _sig, _xc, _yc)
+            gp.params_distribution_plot(_c, _sig)
 
             
     def F(self, params):
