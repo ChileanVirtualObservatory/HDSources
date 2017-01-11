@@ -59,7 +59,7 @@ def d2psi(x, lamb=1.):
 #################################################################
 class ELModel():
     def __init__(self, data, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, 
-                d1psi2=None, d2psi2=None, a=0., b=0., lamb1=1., lamb2=1., base_level=0,
+                d1psi2=None, d2psi2=None, a=0., b=0., lamb1=1., lamb2=1., base_level=0.,
                 minsig=None, maxsig=None, pix_freedom=1., support=5.):
 
         f0 = dfunc( np.vstack([xe,ye]).T )
@@ -74,7 +74,7 @@ class ELModel():
         
         # saving important atributes
         self.data = data
-        if base_level > 0:
+        if base_level > 0.:
             self.mask = data > base_level
         else: 
             self.mask = None
@@ -170,7 +170,7 @@ class ELModel():
     def get_residual_stats(self):
         _xe = np.linspace(0., 1., self.dims[0]+2)[1:-1]
         _ye = np.linspace(0., 1., self.dims[1]+2)[1:-1]
-        Xe,Ye = np.meshgrid(_xe, _ye, sparse=False)
+        Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
         xe = Xe.ravel(); ye = Ye.ravel()
 
         xc, yc, c, sig = self.get_params_mapped()
@@ -413,7 +413,7 @@ def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
             if sol['success']: break
                 
     elm.scipy_sol = sol
-    elm.elapse_time = time.time() - t0
+    elm.elapsed_time = time.time() - t0
     elm.summarize()
     # print('Residual RMS: {0}'.format(residual_rms[-1]))
     # print('Residual Variance: {0}'.format(residual_variance[-1]))
