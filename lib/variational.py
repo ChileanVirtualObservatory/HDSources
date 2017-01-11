@@ -112,6 +112,9 @@ class ELModel():
         self.lamb2 = lamb2
         self.base_level = base_level
         self.support = support
+        # solution variables
+        self.scipy_sol = None
+        self.elapsed_time = None
 
 
     def set_centers(self, theta_xc, theta_yc):
@@ -184,7 +187,35 @@ class ELModel():
                 estimate_entropy(residual),
                 estimate_rms(residual))
 
+    
+    def summarize(self, solver_output=True, residual_stats=True, solution_plot=True, params_plot=True):
+        print('\n \n' + '#'*90)    
+        print('FINAL RESULTS:')
+        print('#'*90 + '\n')
+        _xc, _yc, _c, _sig = self.get_params_mapped()
+        
+        if solver_output:
+            print('Solver Output:')
+            print('\nsuccess: {0}'.format(self.scipy_sol['success']))
+            print('\nstatus: {0}'.format(self.scipy_sol['status']))
+            print('\nmessage: {0}'.format(self.scipy_sol['message']))
+            print('\nnfev: {0}'.format(self.scipy_sol['nfev']))
+        
+        if residual_stats:
+            var,entr,rms  = self.get_residual_stats()
+            print('Residual RMS: {0}'.format(rms))
+            print('Residual Variance: {0}'.format(var))
+            print('Residual Entropy: {0}'.format(entr))
+            print('Total elapsed time: {0} [s]'.format(self.elapsed_time))
+        
+        if solution_plot:
+            solution_plot(self.dfunc, _c, _sig, _xc, _yc, dims=self.dims, base_level=self.base_level, support=self.support)
+        
+        if params_plot:
+            params_plot(_c, _sig, _xc, _yc)
+            params_distribution_plot(_c, _sig)
 
+            
     def F(self, params):
         N = len(params)/4
         theta_xc = params[0:N]
@@ -380,34 +411,14 @@ def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
             print('\nmessage: {0}'.format(sol['message']))
             print('\nnfev: {0}'.format(sol['nfev']))
             if sol['success']: break
-            
-    print('\n \n' + '#'*90)    
-    print('FINAL RESULTS:')
-    print('#'*90 + '\n')
-
-    print('Solver Output:')
-    print('\nsuccess: {0}'.format(sol['success']))
-    print('\nstatus: {0}'.format(sol['status']))
-    print('\nmessage: {0}'.format(sol['message']))
-    print('\nnfev: {0}'.format(sol['nfev']))
-
-    elapsed_time = time.time() - t0
-    var,entr,rms  = elm.get_residual_stats()
-
+                
+    elm.scipy_sol = sol
+    elm.elapse_time = time.time() - t0
+    elm.summarize()
     # print('Residual RMS: {0}'.format(residual_rms[-1]))
     # print('Residual Variance: {0}'.format(residual_variance[-1]))
     # print('Residual Entropy: {0}'.format(residual_entropy[-1]))
     # print('Total elapsed time: {0} [s]'.format(time.time()-t0))
-
-    print('Residual RMS: {0}'.format(rms))
-    print('Residual Variance: {0}'.format(var))
-    print('Residual Entropy: {0}'.format(entr))
-    print('Total elapsed time: {0} [s]'.format(elapsed_time))
-
-    _xc, _yc, _c, _sig = elm.get_params_mapped()
     
     # plots generation
-    solution_plot(elm.dfunc, _c, _sig, _xc, _yc, dims=elm.dims, base_level=elm.base_level, support=elm.support)
-    params_plot(_c, _sig, _xc, _yc)
-    params_distribution_plot(_c, _sig)
     #residual_plot(residual_variance, residual_entropy, residual_rms, iter_list[0:len(residual_rms)])
