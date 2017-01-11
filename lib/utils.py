@@ -145,4 +145,11 @@ def logistic(x):
     return 1. / (1. + np.exp(-x))
 
 def logit(x):
-    return np.log(x / (1-x))
+    mask0 = x==0.
+    mask1 = x==1.
+    mask01 = np.logical_and(~mask0, ~mask1)
+    res = np.empty(x.shape[0])
+    res[mask0] = -np.inf
+    res[mask1] = np.inf
+    res[mask01] = np.log(x[mask01] / (1-x[mask01]))
+    return res
