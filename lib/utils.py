@@ -5,6 +5,7 @@ import numpy.ma as ma
 import scipy as sp
 import numexpr as ne
 from math import sqrt, exp
+from scipy.interpolate import RegularGridInterpolator 
 
 # ACALIB helper functions
 sys.path.append('../../ACALIB/')
@@ -131,8 +132,10 @@ def load_data(fit_path):
     return x, y, data, dfunc
 
 
+
 def logistic(x):
     return 1. / (1. + np.exp(-x))
+
 
 def logit(x):
     mask0 = x==0.
@@ -143,3 +146,17 @@ def logit(x):
     res[mask1] = np.inf
     res[mask01] = np.log(x[mask01] / (1-x[mask01]))
     return res
+
+
+def mean_min_dist(points1, points2):
+    x1 = points1[:,0]; y1 = points1[:,1]
+    x2 = points2[:,0]; y2 = points2[:,1]
+    M = points1.shape[0]
+    N = points2.shape[0]
+    Dx = np.empty((M,N))
+    Dy = np.empty((M,N))
+    for k in range(M):
+        Dx[k] = x1[k] - x2
+        Dy[k] = y1[k] - y2
+    D = np.sqrt(Dx**2 + Dy**2)
+    return np.mean( np.min(D, axis=1) )
