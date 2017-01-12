@@ -33,7 +33,7 @@ def merge(c1, mu1, sig1, c2, mu2, sig2):
     c_m = c1+c2
     mu_m = (c1/c_m)*mu1 + (c2/c_m)*mu2
     sig_m = (c1/c_m)*sig1 + (c2/c_m)*sig2 + (c1/c_m)*(c2/c_m)*_outer(mu1-mu2, mu1-mu2)
-    return (c_m, mu_m, sig_m) 
+    return (c_m, mu_m, sig_m)
 
 
 

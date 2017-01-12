@@ -1,9 +1,17 @@
+import sys
 import numba
 import numpy as np
 import numpy.ma as ma
 import scipy as sp
 import numexpr as ne
 from math import sqrt, exp
+
+# ACALIB helper functions
+sys.path.append('../../ACALIB/')
+import acalib
+from acalib import load_fits, standarize
+
+
 
 
 @numba.jit('float64[:] (float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64)', nopython=True)
@@ -79,24 +87,6 @@ def estimate_variance(data):
 
     return np.std(data)**2
 
-
-def compute_residual_stats(data, xc, yc, c, sig, dims, support=5):
-    """
-    Computes the residual stats between appproximation and real data
-    """
-
-    _xe = np.linspace(0., 1., dims[0]+2)[1:-1]
-    _ye = np.linspace(0., 1., dims[1]+2)[1:-1]
-    Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
-    xe = Xe.ravel(); ye = Ye.ravel()
-
-    u = u_eval(c, sig, xc, yc, xe, ye, support=support)
-    u = u.reshape(dims)
-    residual = data-u
-    
-    return (estimate_variance(residual), 
-            estimate_entropy(residual),
-            estimate_rms(residual))
 
 
 def build_dist_matrix(points):
