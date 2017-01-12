@@ -1,10 +1,8 @@
-import sys
-import numpy as np
 import pickle
 import argparse
-
-
+import numpy as np
 # VarClump functions
+import sys
 sys.path.append('/user/m/marvill/VarClump/lib/')
 from utils3D import *
 #from graph import *
@@ -28,7 +26,7 @@ if __name__ == '__main__':
 	#fit_path = '../../bindata/fits/cubes/Antennae_South.CO3_2Line.Clean.pcal1.image.fits'
 	#fit_path = '../../bindata/fits/cubes/CenA.CO2_1Line.Clean.image.fits'
 	#fit_path = '../../bindata/fits/cubes/M100line.image.fits'
-	fit_path = '/user/m/marvill/ACALIB/bindata/fits/cubes/Orion.methanol.cbc.contsub.image.fits'
+	fit_path = '/user/m/marvill/acalib/bindata/fits/cubes/Orion.methanol.cbc.contsub.image.fits'
 	#fit_path = '../../bindata/fits/cubes/ALMA01000740.fits'
 
 	x, y, z, data, dfunc = load_data(fit_path)
