@@ -1,6 +1,7 @@
 notebooks/.ipynb_checkpoints
 notebooks_attic/.ipynb_checkpoints
-docs/
+data/
+results/
 
 # trash files
 *.py~
