@@ -113,24 +113,24 @@ def load_data(fit_path):
     data = standarize(container.primary)[0]
     data = data.data
 
-    # stacking it
-    data = data.sum(axis=0)
+    # map to 0-1 intensity range
     data -= data.min()
     data /= data.max()
 
-    # generating the data function
-    x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
-    y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
-    _dfunc = RegularGridInterpolator((x,y), data, method='linear', bounds_error=False, fill_value=0.)
-    
-    def dfunc(points):
-        if points.ndim==1:
-            return _dfunc([[points[1],points[0]]])
-        elif points.ndim==2:
-            return  _dfunc(points[:,::-1])
-    
-    return x, y, data, dfunc
+    if data.ndim==2:
+        # generating the data function
+        x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
+        y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
+        dfunc = RegularGridInterpolator((x,y), data, method='linear', bounds_error=False, fill_value=0.)
+        return x,y,data,dfunc
 
+    elif data.ndim==3:
+        # generating the data function
+        x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
+        y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
+        z = np.linspace(0., 1., data.shape[2]+2, endpoint=True)[1:-1]
+        dfunc = RegularGridInterpolator((x, y, z), data, method='linear', bounds_error=False, fill_value=0.)
+        return x, y, z, data, dfunc
 
 
 def logistic(x):
