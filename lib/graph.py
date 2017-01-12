@@ -196,7 +196,6 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     #fig.legend(bbox_to_anchor=(1.2, 1.0))
     plt.show()
 
-
     
 def components_plot(elm, components_dict, n_comp, n_levels=5):
     # get all the (mapped) parameters
@@ -235,3 +234,54 @@ def components_plot(elm, components_dict, n_comp, n_levels=5):
         #plt.colorbar(im, cax=cax)
     plt.show()
     
+
+########################################################
+# 3D only functions
+########################################################
+
+def points_plot3D(points, title=None):
+    x = points[:,0]
+    y = points[:,1]
+    z = points[:,2]
+
+    # visualization of points
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x, y, z, c='r', marker='o', s=7)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+    plt.title(title)
+    plt.show()
+
+
+
+def slices_plot(data, slc):
+    plt.figure(figsize=(5,5))
+    im = plt.imshow(data[slc], vmin=0, vmax=1.)
+    plt.title('3D cube at slice: {0}'.format(slc))
+    plt.axis('off')
+    divider = make_axes_locatable(plt.gca())
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    plt.show()
+  
+
+    
+def comparative_slices_plot(data1, data2, slc):
+    plt.figure(figsize=(10,5))
+    plt.subplot(1,2,1)
+    im = plt.imshow(data1[slc], vmin=0, vmax=1.)
+    plt.title('3D original cube at slice: {0}'.format(slc))
+    plt.axis('off')
+    divider = make_axes_locatable(plt.gca())
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    plt.subplot(1,2,2)
+    im = plt.imshow(data2[slc], vmin=0, vmax=1.)
+    plt.title('3D approximated cube at slice: {0}'.format(slc))
+    plt.axis('off')
+    divider = make_axes_locatable(plt.gca())
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    plt.show()
