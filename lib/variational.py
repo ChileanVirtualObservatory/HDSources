@@ -8,6 +8,7 @@ from math import sqrt, exp
 import matplotlib.pyplot as plt
 import graph as gp
 from utils import *
+from hausdorff import hausdorff
 
 
 #################################################################
@@ -188,7 +189,7 @@ class ELModel():
                 estimate_rms(residual))
 
     
-    def summarize(self, solver_output=True, residual_stats=True, solution_plot=True, params_plot=True):
+    def summarize(self, solver_output=True, residual_stats=True, coverage_stats=True, solution_plot=True, params_plot=True):
         print('\n \n' + '#'*90)    
         print('FINAL RESULTS:')
         print('#'*90 + '\n')
@@ -207,6 +208,14 @@ class ELModel():
             print('Residual Variance: {0}'.format(var))
             print('Residual Entropy: {0}'.format(entr))
             print('Total elapsed time: {0} [s]'.format(self.elapsed_time))
+
+        if coverage_stats:
+            center = np.ascontiguousarray( np.vstack( [self.xc, self.yc] ).T )
+            colloc = np.ascontiguousarray( np.vstack( [self.xe, self.ye] ).T )
+            print('\nCoverage of solution:')
+            print('Hausdorff distance between collocation and center points: {0}'.format(hausdorff(colloc, center)))
+            print('Mean min distance between collocation and center points: {0}'.format(mean_min_dist(colloc, center)))
+
         
         if solution_plot:
             gp.solution_plot(self.dfunc, _c, _sig, _xc, _yc, dims=self.dims, base_level=self.base_level, support=self.support)
