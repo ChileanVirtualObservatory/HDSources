@@ -5,7 +5,7 @@ import argparse
 
 
 # VarClump functions
-sys.path.append('../lib/')
+sys.path.append('/user/m/marvill/VarClump/lib/')
 from utils3D import *
 #from graph import *
 from points_generation3D import *
@@ -28,7 +28,7 @@ if __name__ == '__main__':
 	#fit_path = '../../bindata/fits/cubes/Antennae_South.CO3_2Line.Clean.pcal1.image.fits'
 	#fit_path = '../../bindata/fits/cubes/CenA.CO2_1Line.Clean.image.fits'
 	#fit_path = '../../bindata/fits/cubes/M100line.image.fits'
-	fit_path = '../../ACALIB/bindata/fits/cubes/Orion.methanol.cbc.contsub.image.fits'
+	fit_path = '/user/m/marvill/ACALIB/bindata/fits/cubes/Orion.methanol.cbc.contsub.image.fits'
 	#fit_path = '../../bindata/fits/cubes/ALMA01000740.fits'
 
 	x, y, z, data, dfunc = load_data(fit_path)
@@ -87,5 +87,5 @@ if __name__ == '__main__':
 		elm_solver(elm, method='iterative', max_nfev=10000, n_iter=10, verbose=False)
 
 	# storing results
-	pickle.dump(elm, open( '../results/elm-{0}C-{1}-{2}.pkl'.format(Nc, args.points_method, args.solver_method), 'wb' ))
+	pickle.dump(elm, open( '/user/m/marvill/VarClump/results/elm-{0}C-{1}-{2}.pkl'.format(Nc, args.points_method, args.solver_method), 'wb' ))
 
