@@ -83,7 +83,7 @@ if __name__ == '__main__':
 	# solving it
 	if args.solver_method == 'standar':
 		elm_solver(elm, method='standar', max_nfev=100000, verbose=False)
-	if args.solver_method == 'interative':
+	if args.solver_method == 'iterative':
 		elm_solver(elm, method='iterative', max_nfev=10000, n_iter=10, verbose=False)
 
 	# storing results
