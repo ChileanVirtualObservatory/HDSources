@@ -79,11 +79,13 @@ if __name__ == '__main__':
 	               d1psi2=d1psi, d2psi2=d2psi, base_level=base_level, pix_freedom=1.)
 
 	# solving it
-	if args.solver_method == 'standar':
-		elm_solver(elm, method='standar', max_nfev=100000, verbose=False)
+	if args.solver_method == 'standard':
+		elm_solver(elm, method='standard', max_nfev=100000, verbose=False)
 	if args.solver_method == 'iterative':
 		elm_solver(elm, method='iterative', max_nfev=10000, n_iter=10, verbose=False)
 
 	# storing results
-	pickle.dump(elm, open( '/user/m/marvill/VarClump/results/elm-{0}C-{1}-{2}.pkl'.format(Nc, args.points_method, args.solver_method), 'wb' ))
+	out = open( '/user/m/marvill/VarClump/results/elm-{0}C-{1}-{2}.pkl'.format(Nc, args.points_method, args.solver_method), 'wb' )
+	pickle.dump(elm, out)
+	out.close()
 
