@@ -254,7 +254,7 @@ class ELModel():
 def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
     t0 = time.time()
 
-    if method=='standar':
+    if method=='standard':
         # lm optimization from scipy.optimize.root
         options = {'maxiter':max_nfev, 'xtol':1.e-7, 'ftol':1.e-7}
         sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options=options)
