@@ -43,7 +43,7 @@ def random_centers_generation(data, n_centers, base_level=None, power=2.):
     np.random.seed(0)
 
     # for safety reasons
-    data = copy.copy(data)
+    data = copy.deepcopy(data)
 
     # unusable pixels mask
     if base_level is not None:

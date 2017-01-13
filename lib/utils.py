@@ -112,19 +112,27 @@ def load_data(fit_path):
     container = load_fits(fit_path)
     data = standarize(container.primary)[0]
     data = data.data
+    
+    # in case NaN values exist on cube
+    mask = np.isnan(data)
+    if np.any(mask): data = ma.masked_array(data, mask=mask)
 
     # map to 0-1 intensity range
     data -= data.min()
     data /= data.max()
-
-    if data.ndim==2:
+    
+    if data.shape[0]==1:
+        data = np.ascontiguousarray(data[0])
+        if np.any(mask): 
+            mask = np.ascontiguousarray(mask[0])
+            data = ma.masked_array(data, mask=mask)
         # generating the data function
         x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
         y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
         dfunc = RegularGridInterpolator((x,y), data, method='linear', bounds_error=False, fill_value=0.)
         return x,y,data,dfunc
 
-    elif data.ndim==3:
+    else:
         # generating the data function
         x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
         y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
