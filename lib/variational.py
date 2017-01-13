@@ -301,7 +301,7 @@ class ELModel():
 
 # NOTE: ADD VERBOSITY LEVEL
 
-def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
+def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True, xtol=1.e-7, ftol=1.e-7):
     t0 = time.time()
 
     # if step_iter is None:
@@ -380,7 +380,7 @@ def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
 
     if method=='standard':
         # lm optimization from scipy.optimize.root
-        options = {'maxiter':max_nfev, 'xtol':1.e-7, 'ftol':1.e-7}
+        options = {'maxiter':max_nfev, 'xtol':xtol, 'ftol':ftol}
         sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options=options)
         sol_length = len(sol.x)/4
         opt_theta_xc = sol.x[0:sol_length]
@@ -401,7 +401,7 @@ def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
             print('#'*90)
             
             # lm optimization from scipy.optimize.root
-            options = {'maxiter':max_nfev, 'xtol':1.e-7, 'ftol':1.e-7}
+            options = {'maxiter':max_nfev, 'xtol':xtol, 'ftol':ftol}
             sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options=options)
             sol_length = len(sol.x)/4
             opt_theta_xc = sol.x[0:sol_length]
