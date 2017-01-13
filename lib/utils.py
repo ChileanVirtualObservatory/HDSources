@@ -5,12 +5,13 @@ import numpy.ma as ma
 import scipy as sp
 import numexpr as ne
 from math import sqrt, exp
-from scipy.interpolate import RegularGridInterpolator 
+from scipy.interpolate import RegularGridInterpolator
+from astropy.io import fits
 
 # ACALIB helper functions
-sys.path.append('../../ACALIB/')
-import acalib
-from acalib import load_fits, standarize
+#sys.path.append('../../ACALIB/')
+#import acalib
+#from acalib import load_fits, standarize
 
 
 
@@ -108,10 +109,11 @@ def build_dist_matrix(points):
     return np.sqrt(Dx**2+Dy**2)
 
 
-def load_data(fit_path):
-    container = load_fits(fit_path)
-    data = standarize(container.primary)[0]
-    data = data.data
+def load_data(fits_path):
+    hdulist = fits.open(fits_path)
+    data = hdulist[0].data
+    # droping out the stokes dimension
+    data = np.ascontiguousarray(data[0])
     
     # in case NaN values exist on cube
     mask = np.isnan(data)
@@ -138,7 +140,7 @@ def load_data(fit_path):
         y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
         z = np.linspace(0., 1., data.shape[2]+2, endpoint=True)[1:-1]
         dfunc = RegularGridInterpolator((x, y, z), data, method='linear', bounds_error=False, fill_value=0.)
-        return x, y, z, data, dfunc
+        return x,y,z,data,dfunc
 
 
 def logistic(x):
