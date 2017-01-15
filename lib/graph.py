@@ -6,6 +6,32 @@ from utils import u_eval
 
 
 
+def image_plot(data, title='FITS image'):
+    plt.figure(figsize=(6,6))
+    im = plt.imshow(data, cmap=plt.cm.afmhot)
+    plt.title(title)
+    plt.axis('off')
+    divider = make_axes_locatable(plt.gca())
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    plt.show()
+
+
+def thresholded_image_plot(data, level):
+    plt.figure(figsize=(6,6))
+    ax = plt.gca()
+    _data = np.zeros(data.shape)
+    mask = data > level
+    _data[mask] = data[mask]
+    im = ax.imshow(_data, cmap=plt.cm.afmhot)
+    plt.title('Thresholded data')
+    plt.axis('off')
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.08)
+    plt.colorbar(im, cax=cax)
+    plt.show()
+
+
 def plotter(dfunc, c, sig, xc, resolution=10, title=None):
     """
     Helper function to visualize the quality of the solution
