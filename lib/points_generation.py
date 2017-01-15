@@ -48,6 +48,9 @@ def random_centers_generation(data, n_centers, base_level=None, power=2.):
     # unusable pixels mask
     if base_level is not None:
         mask = data <= base_level
+        if isinstance(mask, np.ma.masked_array):
+            mask.fill_value = True
+            mask = mask.filled()
         if np.sum(~mask) < n_centers:
             print('The number of usable pixels is less than n_centers')
             return None
@@ -69,6 +72,9 @@ def random_centers_generation(data, n_centers, base_level=None, power=2.):
     points_indexes = np.arange(0, points_positions.shape[0])
     
     # array with probabilities of selection for each center
+    if isinstance(data, np.ma.masked_array):
+        data.fill_value = 0.
+        data = data.filled()
     if isinstance(mask, np.ndarray):
         data[mask] = 0.
         prob = data/data.sum()
