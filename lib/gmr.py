@@ -56,7 +56,7 @@ def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
     # KL divergence upper bound as proposed in: A Kullback-Leibler Approach to Gaussian Mixture Reduction
     if len(sig_m)==2:
         return 0.5*((c1+c2)*np.log(_det2D(sig_m)) - c1*np.log(_det2D(sig1)) - c2*np.log(_det2D(sig2)))
-    elif len(sig_m)==3:
+    else:
         return 0.5*((c1+c2)*np.log(_det3D(sig_m)) - c1*np.log(_det3D(sig1)) - c2*np.log(_det3D(sig2)))
 
 
