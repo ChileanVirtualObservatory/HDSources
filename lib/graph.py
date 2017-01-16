@@ -284,7 +284,7 @@ def points_plot3D(points, title=None):
 
 def slices_plot(data, slc):
     plt.figure(figsize=(5,5))
-    im = plt.imshow(data[slc], vmin=0, vmax=1., cmap=plt.cm.gray)
+    im = plt.imshow(data[slc], vmin=0, vmax=1., cmap=plt.cm.afmhot)
     plt.title('3D cube at slice: {0}'.format(slc))
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())
@@ -297,14 +297,14 @@ def slices_plot(data, slc):
 def comparative_slices_plot(data1, data2, slc):
     plt.figure(figsize=(10,5))
     plt.subplot(1,2,1)
-    im = plt.imshow(data1[slc], vmin=0, vmax=1., cmap=plt.cm.gray)
+    im = plt.imshow(data1[slc], vmin=0, vmax=1., cmap=plt.cm.afmhot)
     plt.title('3D original cube at slice: {0}'.format(slc))
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     plt.subplot(1,2,2)
-    im = plt.imshow(data2[slc], vmin=0, vmax=1., cmap=plt.cm.gray)
+    im = plt.imshow(data2[slc], vmin=0, vmax=1., cmap=plt.cm.afmhot)
     plt.title('3D approximated cube at slice: {0}'.format(slc))
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())
