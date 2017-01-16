@@ -90,23 +90,22 @@ def estimate_variance(data):
     return np.std(data)**2
 
 
-
-def build_dist_matrix(points):
+def build_dist_matrix(points, inf=False):
     """
     Builds a distance matrix from points array.
     It returns a (n_points, n_points) distance matrix. 
 
     points: NumPy array with shape (n_points, 2) 
     """
-    xp = points[:,0]
-    yp = points[:,1]
-    N = points.shape[0]
-    Dx = np.empty((N,N))
-    Dy = np.empty((N,N))
-    for k in range(N):
-        Dx[k,:] = xp[k]-xp
-        Dy[k,:] = yp[k]-yp
-    return np.sqrt(Dx**2+Dy**2)
+    m,n = points.shape
+    D = np.empty((m,m))
+    for i in range(m):
+        for j in range(m):
+            if inf and i==j: 
+                D[i,j] = np.inf
+                continue 
+            D[i,j] = np.linalg.norm(points[i]-points[j], ord=2)
+    return D
 
 
 def load_data(fits_path):
@@ -170,3 +169,4 @@ def mean_min_dist(points1, points2):
         Dy[k] = y1[k] - y2
     D = np.sqrt(Dx**2 + Dy**2)
     return np.mean( np.min(D, axis=1) )
+
