@@ -24,7 +24,7 @@ def thresholded_image_plot(data, level):
     mask = data > level
     _data[mask] = data[mask]
     im = ax.imshow(_data, cmap=plt.cm.afmhot)
-    plt.title('Thresholded data')
+    plt.title('Thresholded data at: {0}'.format(level))
     plt.axis('off')
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.08)
