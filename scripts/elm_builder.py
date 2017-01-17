@@ -1,4 +1,4 @@
-import pickle
+import cPickle as pickle
 import argparse
 import numpy as np
 # VarClump functions
@@ -86,6 +86,6 @@ if __name__ == '__main__':
 
 	# storing results
 	out = open( '/user/m/marvill/VarClump/results/elm-{0}C-{1}-{2}.pkl'.format(Nc, args.points_method, args.solver_method), 'wb' )
-	pickle.dump(elm, out)
+	pickle.dump(elm, out, protocol=2)
 	out.close()
 
