@@ -1,4 +1,4 @@
-import pickle
+import cPickle as pickle
 import argparse
 import numpy as np
 # VarClump functions
@@ -79,13 +79,14 @@ if __name__ == '__main__':
 	               d1psi2=d1psi, d2psi2=d2psi, base_level=base_level, pix_freedom=1.)
 
 	# solving it
+        nfev =  100 * ( len(elm.get_params())+1 ) 
 	if args.solver_method == 'standard':
-		elm_solver(elm, method='standard', max_nfev=100000, verbose=False)
+		elm_solver(elm, method='standard', max_nfev=nfev, verbose=False)
 	if args.solver_method == 'iterative':
-		elm_solver(elm, method='iterative', max_nfev=10000, n_iter=10, verbose=False)
+		elm_solver(elm, method='iterative', max_nfev=nfev, n_iter=10, verbose=False)
 
 	# storing results
 	out = open( '/user/m/marvill/VarClump/results/elm-{0}C-{1}-{2}.pkl'.format(Nc, args.points_method, args.solver_method), 'wb' )
-	pickle.dump(elm, out)
+	pickle.dump(elm, out, protocol=2)
 	out.close()
 
