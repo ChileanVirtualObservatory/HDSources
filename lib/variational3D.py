@@ -218,6 +218,10 @@ class ELModel():
             print('Residual Entropy: {0}'.format(entr))
             print('Total elapsed time: {0} [s]'.format(self.elapsed_time))
             
+        
+        if solution_plot:
+            gp.solution_plot3D(self)
+
         if params_plot:
             gp.params_distribution_plot(_c, _sig)
     

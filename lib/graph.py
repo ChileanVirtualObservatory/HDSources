@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from utils import u_eval
+from utils3D import u_eval as u_eval3D
+from utils3D import compute_solution
 
 
 
@@ -294,6 +296,56 @@ def slices_plot(data, slc):
   
 
     
+
+def solution_plot3D(elm):
+    # original (stacked) data
+    _data = elm.data.sum(axis=0)
+    dmin = _data.min(); dmax = _data.max()
+    _data -= dmin; _data /= dmax
+
+    # approximated solution
+    xc, yc, zc, c, sig = elm.get_params_mapped()
+    u = compute_solution(c, sig, xc, yc, zc, elm.dims, base_level=elm.base_level)
+    _u = u.sum(axis=0)
+    _u -= dmin; _u /= dmax
+
+    # residual
+    res = _data-_u+_u.min()
+
+
+    # original data plot
+    plt.figure(figsize=(18,12))
+    plt.subplot(1,3,1)
+    ax = plt.gca()
+    im = ax.imshow(_data, vmin=0., vmax=1., cmap=plt.cm.afmhot)
+    plt.title('Original')
+    plt.axis('off')
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    
+    # approximated solution plot
+    plt.subplot(1,3,2)
+    ax = plt.gca()
+    im = ax.imshow(_u, vmin=0., vmax=1., cmap=plt.cm.afmhot)
+    plt.title('Solution')
+    plt.axis('off')
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    
+    # residual plot
+    plt.subplot(1,3,3)
+    ax = plt.gca()
+    im = ax.imshow(res, vmin=0., vmax=1., cmap=plt.cm.afmhot)
+    plt.title('Residual')
+    plt.axis('off')
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    plt.show()
+
+
 def comparative_slices_plot(data1, data2, slc):
     plt.figure(figsize=(10,5))
     plt.subplot(1,2,1)
@@ -310,4 +362,46 @@ def comparative_slices_plot(data1, data2, slc):
     divider = make_axes_locatable(plt.gca())
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
+    plt.show()
+
+
+def components_plot3D(elm, components_dict, n_comp, n_levels=10):
+    # get all the (mapped) parameters
+    xc, yc, zc, c, sig = elm.get_params_mapped()
+
+    # generating the evaluation points
+    _xe = np.linspace(0., 1., elm.dims[0]+2)[1:-1]
+    _ye = np.linspace(0., 1., elm.dims[1]+2)[1:-1]
+    _ze = np.linspace(0., 1., elm.dims[2]+2)[1:-1]
+    len_xe = len(_xe); len_ye = len(_ye); len_ze = len(_ze)
+    Xe,Ye,Ze = np.meshgrid(_xe, _ye, _ze, sparse=False, indexing='ij')
+    xe = Xe.ravel(); ye = Ye.ravel(); ze = Ze.ravel()  
+
+    plt.figure(figsize=(8,8))
+    plt.title('{0} components solution'.format(n_comp))
+    plt.axis('off')
+    ax = plt.subplot(1,1,1)
+
+    # stacked data, mapping to [0,1] and display 
+    _data = elm.data.sum(axis=0)
+    dmin = _data.min(); dmax = _data.max()
+    _data -= dmin
+    _data /= dmax
+    ax.imshow(_data, cmap=plt.cm.afmhot)
+
+    # contours configuration
+    minval = ((elm.base_level*elm.dims[0]) - dmin) / dmax
+    color = plt.cm.rainbow(np.linspace(0., 1., n_comp))
+    levels = np.linspace(minval+0.01, 0.95, n_levels)
+
+    for i,indexes in enumerate(components_dict[n_comp]):
+        _xc = xc[indexes]
+        _yc = yc[indexes]
+        _zc = zc[indexes]
+        _c = c[indexes]
+        _sig = sig[indexes]
+        u = u_eval3D(_c, _sig, _xc, _yc, _zc, xe, ye, ze, support=elm.support) + elm.base_level
+        _u = u.reshape(len_xe, len_ye, len_ze).sum(axis=0)
+        _u -= dmin; _u /= dmax
+        ax.contour(_u, levels=levels, colors=[color[i]])
     plt.show()
