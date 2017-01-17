@@ -6,6 +6,32 @@ from utils import u_eval
 
 
 
+def image_plot(data, title='FITS image'):
+    plt.figure(figsize=(6,6))
+    im = plt.imshow(data, cmap=plt.cm.afmhot)
+    plt.title(title)
+    plt.axis('off')
+    divider = make_axes_locatable(plt.gca())
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    plt.show()
+
+
+def thresholded_image_plot(data, level):
+    plt.figure(figsize=(6,6))
+    ax = plt.gca()
+    _data = np.zeros(data.shape)
+    mask = data > level
+    _data[mask] = data[mask]
+    im = ax.imshow(_data, cmap=plt.cm.afmhot)
+    plt.title('Thresholded data at: {0}'.format(level))
+    plt.axis('off')
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.08)
+    plt.colorbar(im, cax=cax)
+    plt.show()
+
+
 def plotter(dfunc, c, sig, xc, resolution=10, title=None):
     """
     Helper function to visualize the quality of the solution
@@ -56,7 +82,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
     plt.figure(figsize=(18,12))
     plt.subplot(1,3,1)
     ax = plt.gca()
-    im = ax.imshow(f, vmin=0., vmax=1.)
+    im = ax.imshow(f, vmin=0., vmax=1., cmap=plt.cm.afmhot)
     plt.title('Original')
     plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -66,7 +92,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
     # approximated solution plot
     plt.subplot(1,3,2)
     ax = plt.gca()
-    im = ax.imshow(u, vmin=0., vmax=1.)
+    im = ax.imshow(u, vmin=0., vmax=1., cmap=plt.cm.afmhot)
     plt.title('Solution')
     plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -76,7 +102,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
     # residual plot
     plt.subplot(1,3,3)
     ax = plt.gca()
-    im = ax.imshow(res, vmin=0., vmax=1.)
+    im = ax.imshow(res, vmin=0., vmax=1., cmap=plt.cm.afmhot)
     plt.title('Residual')
     plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -161,36 +187,36 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     y_scale = data.shape[1]-1
     if (center_points is not None) and (collocation_points is None):
         plt.figure(figsize=(8,8))
-        plt.imshow(data)
-        plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='r', s=5, label='center')
+        plt.imshow(data, cmap=plt.cm.afmhot)
+        plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='#7272e8', s=5, label='center')
         if title is not None: plt.title(title) 
         else: plt.title('Center points')
         plt.axis('off')
     elif (center_points is None) and (collocation_points is not None):
         plt.figure(figsize=(8,8))
-        plt.imshow(data)
-        plt.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='g', s=5, label='collocation')
+        plt.imshow(data, cmap=plt.cm.afmhot)
+        plt.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='#7272e8', s=5, label='collocation')
         if title is not None: plt.title(title)
         else: plt.title('Collocation points')
         plt.axis('off')
     elif (center_points is not None) and (collocation_points is not None):
         fig = plt.figure(figsize=(20,15))
         ax1 = fig.add_subplot(121)
-        ax1.imshow(data)
-        ax1.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='r', s=5, label='center')
+        ax1.imshow(data, cmap=plt.cm.afmhot)
+        ax1.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='#7272e8', s=5, label='center')
         if title is not None: plt.title(title)
         else: ax1.set_title('Center points')
         ax1.axis('off')
         ax2 = fig.add_subplot(122)
-        ax2.imshow(data)
-        ax2.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='g', s=5, label='collocation')
+        ax2.imshow(data, cmap=plt.cm.afmhot)
+        ax2.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='#7272e8', s=5, label='collocation')
         if title is not None: plt.title(title)
         else: ax2.set_title('Collocation points')
         ax2.axis('off')
     if (boundary_points is not None) and len(boundary_points[:,0])!=0:
         plt.figure(figsize=(8,8))
-        plt.imshow(data)
-        plt.scatter(boundary_points[:,1]*y_scale, boundary_points[:,0]*x_scale, c='y', s=5, label="boundary")
+        plt.imshow(data, cmap=plt.cm.afmhot)
+        plt.scatter(boundary_points[:,1]*y_scale, boundary_points[:,0]*x_scale, c='#7272e8', s=5, label="boundary")
         plt.axis('off')
     #plt.colorbar(im, cax=cax)
     #fig.legend(bbox_to_anchor=(1.2, 1.0))
@@ -212,7 +238,7 @@ def components_plot(elm, components_dict, n_comp, n_levels=5):
     plt.title('{0} components solution'.format(n_comp))
     plt.axis('off')
     ax = plt.subplot(1,1,1)
-    ax.imshow(elm.data, cmap=plt.cm.gray)
+    ax.imshow(elm.data, cmap=plt.cm.afmhot)
     color = plt.cm.rainbow(np.linspace(0., 1., n_comp))
     levels = np.linspace(1.05*elm.base_level, 0.95, n_levels)
     
@@ -258,7 +284,7 @@ def points_plot3D(points, title=None):
 
 def slices_plot(data, slc):
     plt.figure(figsize=(5,5))
-    im = plt.imshow(data[slc], vmin=0, vmax=1.)
+    im = plt.imshow(data[slc], vmin=0, vmax=1., cmap=plt.cm.afmhot)
     plt.title('3D cube at slice: {0}'.format(slc))
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())
@@ -271,14 +297,14 @@ def slices_plot(data, slc):
 def comparative_slices_plot(data1, data2, slc):
     plt.figure(figsize=(10,5))
     plt.subplot(1,2,1)
-    im = plt.imshow(data1[slc], vmin=0, vmax=1.)
+    im = plt.imshow(data1[slc], vmin=0, vmax=1., cmap=plt.cm.afmhot)
     plt.title('3D original cube at slice: {0}'.format(slc))
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     plt.subplot(1,2,2)
-    im = plt.imshow(data2[slc], vmin=0, vmax=1.)
+    im = plt.imshow(data2[slc], vmin=0, vmax=1., cmap=plt.cm.afmhot)
     plt.title('3D approximated cube at slice: {0}'.format(slc))
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())

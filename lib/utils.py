@@ -5,12 +5,13 @@ import numpy.ma as ma
 import scipy as sp
 import numexpr as ne
 from math import sqrt, exp
-from scipy.interpolate import RegularGridInterpolator 
+from scipy.interpolate import RegularGridInterpolator
+from astropy.io import fits
 
 # ACALIB helper functions
-sys.path.append('../../ACALIB/')
-import acalib
-from acalib import load_fits, standarize
+#sys.path.append('../../ACALIB/')
+#import acalib
+#from acalib import load_fits, standarize
 
 
 
@@ -89,48 +90,104 @@ def estimate_variance(data):
     return np.std(data)**2
 
 
+def snr_estimation(data, noise=None, points=1000, full_output=False):
+    """
+    Heurustic that uses the inflexion point of the thresholded RMS to estimate where signal is dominant w.r.t. noise
+    
+    Parameters
+    ---------- 
+    data : (M,N,Z) numpy.ndarray or numpy.ma.MaskedArray
 
-def build_dist_matrix(points):
+
+    noise : float (default=None)
+        Noise level, if not given will use rms of the data.
+    
+    points : (default=1000)
+
+    full_output : boolean (default=False)
+        Gives verbose results if True
+
+    Returns
+    --------
+
+    "Signal to Noise Radio" value
+    
+    """
+    if noise is None:
+        noise = estimate_rms(data)
+    x = []
+    y = []
+    n = []
+    sdata = data[data > noise]
+    for i in range(1, int(points)):
+        val = 1.0 + 2.0 * i / points
+        sdata = sdata[sdata > val * noise]
+        if sdata.size < 2:
+            break
+        n.append(sdata.size)
+        yval = sdata.mean() / noise
+        x.append(val)
+        y.append(yval)
+    y = np.array(y)
+    v = y[1:] - y[0:-1]
+    p = v.argmax() + 1
+    snrlimit = x[p]
+    if full_output == True:
+        return snrlimit, noise, x, y, v, n, p
+    return snrlimit
+
+
+
+def build_dist_matrix(points, inf=False):
     """
     Builds a distance matrix from points array.
     It returns a (n_points, n_points) distance matrix. 
 
     points: NumPy array with shape (n_points, 2) 
     """
-    xp = points[:,0]
-    yp = points[:,1]
-    N = points.shape[0]
-    Dx = np.empty((N,N))
-    Dy = np.empty((N,N))
-    for k in range(N):
-        Dx[k,:] = xp[k]-xp
-        Dy[k,:] = yp[k]-yp
-    return np.sqrt(Dx**2+Dy**2)
+    m,n = points.shape
+    D = np.empty((m,m))
+    for i in range(m):
+        for j in range(m):
+            if inf and i==j: 
+                D[i,j] = np.inf
+                continue 
+            D[i,j] = np.linalg.norm(points[i]-points[j], ord=2)
+    return D
 
 
-def load_data(fit_path):
-    container = load_fits(fit_path)
-    data = standarize(container.primary)[0]
-    data = data.data
+def load_data(fits_path):
+    hdulist = fits.open(fits_path)
+    data = hdulist[0].data
+    # droping out the stokes dimension
+    data = np.ascontiguousarray(data[0])
+    
+    # in case NaN values exist on cube
+    mask = np.isnan(data)
+    if np.any(mask): data = ma.masked_array(data, mask=mask)
 
-    # stacking it
-    data = data.sum(axis=0)
+    # map to 0-1 intensity range
     data -= data.min()
     data /= data.max()
-
-    # generating the data function
-    x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
-    y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
-    _dfunc = RegularGridInterpolator((x,y), data, method='linear', bounds_error=False, fill_value=0.)
     
-    def dfunc(points):
-        if points.ndim==1:
-            return _dfunc([[points[1],points[0]]])
-        elif points.ndim==2:
-            return  _dfunc(points[:,::-1])
-    
-    return x, y, data, dfunc
+    if data.shape[0]==1:
+        data = np.ascontiguousarray(data[0])
+        if np.any(mask): 
+            mask = np.ascontiguousarray(mask[0])
+            data = ma.masked_array(data, mask=mask)
+        # generating the data function
+        x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
+        y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
+        dfunc = RegularGridInterpolator((x,y), data, method='linear', bounds_error=False, fill_value=0.)
+        return x,y,data,dfunc
 
+    else:
+        # generating the data function
+        x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
+        y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
+        z = np.linspace(0., 1., data.shape[2]+2, endpoint=True)[1:-1]
+        dfunc = RegularGridInterpolator((x, y, z), data, method='linear', bounds_error=False, fill_value=0.)
+        return x,y,z,data,dfunc
 
 
 def logistic(x):
@@ -160,3 +217,4 @@ def mean_min_dist(points1, points2):
         Dy[k] = y1[k] - y2
     D = np.sqrt(Dx**2 + Dy**2)
     return np.mean( np.min(D, axis=1) )
+

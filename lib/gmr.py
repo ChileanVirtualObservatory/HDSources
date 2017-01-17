@@ -8,7 +8,7 @@ import numpy as np
 # HELPER FUNCTIONS
 ################################################################
 
-@numba.jit('float64[:,:] (float64[:], float64[:])')
+@numba.jit('float64[:,:] (float64[:], float64[:])', nopython=True)
 def _outer(x, y):
     m = x.shape[0]
     n = y.shape[0]
@@ -18,9 +18,16 @@ def _outer(x, y):
             res[i, j] = x[i]*y[j]
     return res
 
-@numba.jit('float64 (float64[:,:])')
+@numba.jit('float64 (float64[:,:])', nopython=True)
 def _det2D(X):
     return X[0,0]*X[1,1] - X[0,1]*X[1,0]
+
+
+@numba.jit('float64 (float64[:,:])', nopython=True)
+def _det3D(X):
+    return X[0,0] * (X[1,1] * X[2,2] - X[2,1] * X[1,2]) - \
+           X[1,0] * (X[0,1] * X[2,2] - X[2,1] * X[0,2]) + \
+           X[2,0] * (X[0,1] * X[1,2] - X[1,1] * X[0,2])
 
 
 
@@ -47,7 +54,11 @@ def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
     # merged moment preserving gaussian
     c_m, mu_m, sig_m = merge(c1, mu1, sig1, c2, mu2, sig2)
     # KL divergence upper bound as proposed in: A Kullback-Leibler Approach to Gaussian Mixture Reduction
-    return 0.5*((c1+c2)*np.log(_det2D(sig_m)) - c1*np.log(_det2D(sig1)) - c2*np.log(_det2D(sig2)))
+    if len(sig_m)==2:
+        return 0.5*((c1+c2)*np.log(_det2D(sig_m)) - c1*np.log(_det2D(sig1)) - c2*np.log(_det2D(sig2)))
+    else:
+        return 0.5*((c1+c2)*np.log(_det3D(sig_m)) - c1*np.log(_det3D(sig1)) - c2*np.log(_det3D(sig2)))
+
 
 
 
@@ -57,7 +68,10 @@ def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
 #################################################################
 
 def gaussian_reduction(c, mu, sig, n_comp, metric=KL_dissimilarity):
-    c = c.tolist(); mu = map(np.array, mu.tolist()); sig = [(s**2)*np.identity(2) for s in sig]
+    if mu.shape[1]==2:
+        c = c.tolist(); mu = map(np.array, mu.tolist()); sig = [(s**2)*np.identity(2) for s in sig]
+    elif mu.shape[1]==3:
+        c = c.tolist(); mu = map(np.array, mu.tolist()); sig = [(s**2)*np.identity(3) for s in sig]
     # indexes of the actual gaussian components
     components = [[i] for i in range(len(c))]
     components_dict = {len(components) : copy.deepcopy(components)}

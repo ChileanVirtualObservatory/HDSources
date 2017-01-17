@@ -189,7 +189,8 @@ class ELModel():
                 estimate_rms(residual))
 
     
-    def summarize(self, solver_output=True, residual_stats=True, coverage_stats=True, solution_plot=True, params_plot=True):
+    def summarize(self, solver_output=True, residual_stats=True, coverage_stats=True, homogeneity_stats=True,
+                  solution_plot=True, params_plot=True):
         print('\n \n' + '#'*90)    
         print('FINAL RESULTS:')
         print('#'*90 + '\n')
@@ -197,13 +198,14 @@ class ELModel():
         
         if solver_output:
             print('Solver Output:')
-            print('\nsuccess: {0}'.format(self.scipy_sol['success']))
-            print('\nstatus: {0}'.format(self.scipy_sol['status']))
-            print('\nmessage: {0}'.format(self.scipy_sol['message']))
-            print('\nnfev: {0}'.format(self.scipy_sol['nfev']))
+            print('success: {0}'.format(self.scipy_sol['success']))
+            print('status: {0}'.format(self.scipy_sol['status']))
+            print('message: {0}'.format(self.scipy_sol['message']))
+            print('nfev: {0}'.format(self.scipy_sol['nfev']))
         
         if residual_stats:
             var,entr,rms  = self.get_residual_stats()
+            print('\nResidual stats:')
             print('Residual RMS: {0}'.format(rms))
             print('Residual Variance: {0}'.format(var))
             print('Residual Entropy: {0}'.format(entr))
@@ -215,6 +217,20 @@ class ELModel():
             print('\nCoverage of solution:')
             print('Hausdorff distance between collocation and center points: {0}'.format(hausdorff(colloc, center)))
             print('Mean min distance between collocation and center points: {0}'.format(mean_min_dist(colloc, center)))
+
+        if homogeneity_stats:
+            # we map each parameter vector to [0,1]
+            __xc = _xc - _xc.min(); __xc /= __xc.max()
+            __yc = _yc - _yc.min(); __yc /= __yc.max()
+            __c = _c - _c.min(); __c /= __c.max()
+            __sig = _sig - _sig.min(); __sig /= __sig.max()
+            params = np.vstack([__xc, __yc, __c, __sig]).T
+            params_dist_matrix = build_dist_matrix(params, inf=True)
+            max_mdist = np.max( params_dist_matrix.min(axis=1) )
+            mean_mdist = np.mean( params_dist_matrix.min(axis=1) )
+            print('\nHomogeneity of solution:')
+            print('Mean min distance in the (standarized) parameters space: {0}'.format(mean_mdist))
+            print('Max min distance in the (standarized) parameters space: {0}'.format(max_mdist))
 
         
         if solution_plot:
@@ -301,7 +317,7 @@ class ELModel():
 
 # NOTE: ADD VERBOSITY LEVEL
 
-def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
+def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True, xtol=1.e-7, ftol=1.e-7):
     t0 = time.time()
 
     # if step_iter is None:
@@ -380,7 +396,7 @@ def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
 
     if method=='standard':
         # lm optimization from scipy.optimize.root
-        options = {'maxiter':max_nfev, 'xtol':1.e-7, 'ftol':1.e-7}
+        options = {'maxiter':max_nfev, 'xtol':xtol, 'ftol':ftol}
         sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options=options)
         sol_length = len(sol.x)/4
         opt_theta_xc = sol.x[0:sol_length]
@@ -401,7 +417,7 @@ def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True):
             print('#'*90)
             
             # lm optimization from scipy.optimize.root
-            options = {'maxiter':max_nfev, 'xtol':1.e-7, 'ftol':1.e-7}
+            options = {'maxiter':max_nfev, 'xtol':xtol, 'ftol':ftol}
             sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options=options)
             sol_length = len(sol.x)/4
             opt_theta_xc = sol.x[0:sol_length]
