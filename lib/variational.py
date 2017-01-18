@@ -259,7 +259,16 @@ class ELModel():
         xb = self.xb; yb = self.yb
         
         # computing u, ux, uy, ...
-        u = u_eval(c, sig, xc, yc, xe, ye, support=self.support) + self.base_level
+        if self.b==0.:
+            u = u_eval(c, sig, xc, yc, xe, ye, support=self.support) + self.base_level
+        else:
+            out = u_eval_full(c, sig, xc, yc, xe, ye, support=self.support)
+            u = out[0,:] + self.base_level
+            ux = out[1,:]
+            uy = out[2,:]
+            uxy = out[3,:]
+            uxx = out[4,:]
+            uyy = out[5,:]
         
         # computing the EL equation
         f0 = self.f0; a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
