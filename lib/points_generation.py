@@ -4,18 +4,6 @@ import numpy as np
 import scipy.stats as st
 
 
-def _inv_gaussian_kernel(kernlen=3, sig=0.1):
-    """
-    Returns a 2D Gaussian kernel array.
-    """
-    interval = (2*sig+1.)/(kernlen)
-    x = np.linspace(-sig-interval/2., sig+interval/2., kernlen+1)
-    kern1d = np.diff(st.norm.cdf(x))
-    kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
-    kernel = kernel_raw/kernel_raw.sum()
-    return kernel.max()-kernel
-
-
 def boundary_generation(n_boundary):
     xb = []
     yb = []
@@ -38,7 +26,19 @@ def boundary_generation(n_boundary):
     return boundary_points
 
 
-def random_centers_generation(data, n_centers, base_level=None, power=2.):
+def _inv_gaussian_kernel(kernlen=3, sig=0.1):
+    """
+    Returns a 2D Gaussian kernel array.
+    """
+    interval = (2*sig+1.)/(kernlen)
+    x = np.linspace(-sig-interval/2., sig+interval/2., kernlen+1)
+    kern1d = np.diff(st.norm.cdf(x))
+    kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
+    kernel = kernel_raw/kernel_raw.sum()
+    return kernel.max()-kernel
+
+
+def random_centers_generation(data, n_centers, base_level=None, power=2., umask=None):
     # fixed seed
     np.random.seed(0)
 
@@ -48,6 +48,8 @@ def random_centers_generation(data, n_centers, base_level=None, power=2.):
     # unusable pixels mask
     if base_level is not None:
         mask = data <= base_level
+        if umask is not None:
+            mask = np.logical_or(mask, umask)
         if isinstance(mask, np.ma.masked_array):
             mask.fill_value = True
             mask = mask.filled()
@@ -101,7 +103,7 @@ def random_centers_generation(data, n_centers, base_level=None, power=2.):
     return points_positions[selected]
 
 
-def qrandom_centers_generation(dfunc, n_centers, base_level, ndim=2, get_size=50):
+def qrandom_centers_generation(dfunc, n_centers, base_level, ndim=2, get_size=50, umask=None):
     # generating the sequencer
     sequencer = ghalton.Halton(ndim)
 
@@ -118,3 +120,41 @@ def qrandom_centers_generation(dfunc, n_centers, base_level, ndim=2, get_size=50
                 n_selected += 1
             if n_selected == n_centers:
                 return np.asarray(points_positions)
+
+
+def boundary_map(data, base_level):
+    pixel_map = data > base_level
+    m,n = pixel_map.shape
+    border_map = np.zeros((m,n), dtype=bool)
+    for i in range(m):
+        for j in range(n):
+            # just verify valid pixels
+            if pixel_map[i,j]==False: continue
+            for p in range(-1,2):
+                for q in range(-1,2):
+                    if p==q==0: continue
+                    if i+p < 0 or j+q < 0: continue
+                    if i+p >= m or j+q >= n: continue
+                    # in case pixel_map[i,j] has a unusable neighbor pixel
+                    # then pixel_map[i,j] is a border pixel
+                    if pixel_map[i+p,j+q]==False: border_map[i,j] = True
+    return border_map
+
+
+def boundary_points_generation(data, base_level, n_points):
+    border_map = boundary_map(data, base_level)
+    x_pos, y_pos = np.where(border_map)
+    # mapping to [0,1] range
+    x_pos = x_pos.astype(float)
+    y_pos = y_pos.astype(float)
+    x_pos /= float(data.shape[0]); x_pos += 0.5/data.shape[0]
+    y_pos /= float(data.shape[1]); y_pos += 0.5/data.shape[1]
+    boundary_points =  np.vstack([x_pos, y_pos]).T
+    # random selecting the specified number of points
+    if n_points > boundary_points.shape[0]:
+        print("Number of can't be greater than the number of border pixels")
+        return None
+    np.random.seed(0)
+    points_indexes = np.arange(boundary_points.shape[0])
+    selected = np.random.choice(points_indexes, size=n_points)
+    return boundary_points[selected]
