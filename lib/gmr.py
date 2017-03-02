@@ -69,9 +69,9 @@ def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
 
 def gaussian_reduction(c, mu, sig, n_comp, metric=KL_dissimilarity):
     if mu.shape[1]==2:
-        c = c.tolist(); mu = map(np.array, mu.tolist()); sig = [(s**2)*np.identity(2) for s in sig]
+        c = c.tolist(); mu = list(map(np.array, mu.tolist())); sig = [(s**2)*np.identity(2) for s in sig]
     elif mu.shape[1]==3:
-        c = c.tolist(); mu = map(np.array, mu.tolist()); sig = [(s**2)*np.identity(3) for s in sig]
+        c = c.tolist(); mu = list(map(np.array, mu.tolist())); sig = [(s**2)*np.identity(3) for s in sig]
     # indexes of the actual gaussian components
     components = [[i] for i in range(len(c))]
     components_dict = {len(components) : copy.deepcopy(components)}
