@@ -91,7 +91,7 @@ def random_centers_generation(data, n_centers, base_level=None, power=2., umask=
     while len(selected)!=n_centers:
         sel = np.random.choice(points_indexes, size=1 , p=prob.ravel(), replace=False)[0]
         # border pixels can't be selected
-        index0 = sel / m
+        index0 = sel // m
         index1 = sel % n
         if index0==0 or index0==m-1 or index1==0 or index1==n-1: continue
         selected.append(sel)

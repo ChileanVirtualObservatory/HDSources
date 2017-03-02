@@ -9,9 +9,9 @@ from scipy.interpolate import RegularGridInterpolator
 
 
 # ACALIB helper functions
-sys.path.append('../../ACALIB/')
-import acalib
-from acalib import load_fits, standarize
+# sys.path.append('../../ACALIB/')
+# import acalib
+# from acalib import load_fits, standarize
 
 
 

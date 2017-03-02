@@ -242,7 +242,7 @@ class ELModel():
 
             
     def F(self, params):
-        N = len(params)/4
+        N = len(params)//4
         theta_xc = params[0:N]
         theta_yc = params[N:2*N]
 
@@ -289,7 +289,7 @@ class ELModel():
 
 
     def _F(self, params):
-        N = len(params)/4
+        N = len(params)//4
         xc = params[0:N]
         yc = params[N:2*N]
 
@@ -407,7 +407,7 @@ def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True, 
         # lm optimization from scipy.optimize.root
         options = {'maxiter':max_nfev, 'xtol':xtol, 'ftol':ftol}
         sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options=options)
-        sol_length = len(sol.x)/4
+        sol_length = len(sol.x)//4
         opt_theta_xc = sol.x[0:sol_length]
         opt_theta_yc = sol.x[sol_length:2*sol_length]
         opt_c = sol.x[2*sol_length:3*sol_length]
@@ -428,7 +428,7 @@ def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True, 
             # lm optimization from scipy.optimize.root
             options = {'maxiter':max_nfev, 'xtol':xtol, 'ftol':ftol}
             sol = sp.optimize.root(elm.F, elm.get_params(), method='lm', options=options)
-            sol_length = len(sol.x)/4
+            sol_length = len(sol.x)//4
             opt_theta_xc = sol.x[0:sol_length]
             opt_theta_yc = sol.x[sol_length:2*sol_length]
             opt_c = sol.x[2*sol_length:3*sol_length]
