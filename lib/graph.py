@@ -9,7 +9,7 @@ from utils3D import compute_solution
 
 
 def image_plot(data, title='FITS image'):
-    plt.figure(figsize=(6,6))
+    plt.figure(figsize=(8,8))
     im = plt.imshow(data, cmap=plt.cm.afmhot)
     plt.title(title)
     plt.axis('off')
@@ -20,7 +20,7 @@ def image_plot(data, title='FITS image'):
 
 
 def thresholded_image_plot(data, level):
-    plt.figure(figsize=(6,6))
+    plt.figure(figsize=(8,8))
     ax = plt.gca()
     _data = np.zeros(data.shape)
     mask = data > level
@@ -184,18 +184,18 @@ def residual_plot(residual_variance, residual_entropy, residual_rms, iter_list):
 
 
     
-def points_plot(data, center_points=None, collocation_points=None, boundary_points=None, title=None):
+def points_plot(data, center_points=None, collocation_points=None, boundary_points=None, title=None, save_path=None):
     x_scale = data.shape[0]-1
     y_scale = data.shape[1]-1
     if (center_points is not None) and (collocation_points is None):
-        plt.figure(figsize=(8,8))
+        plt.figure(figsize=(10,10))
         plt.imshow(data, cmap=plt.cm.afmhot)
         plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='#7272e8', s=5, label='center')
         if title is not None: plt.title(title) 
         else: plt.title('Center points')
         plt.axis('off')
     elif (center_points is None) and (collocation_points is not None):
-        plt.figure(figsize=(8,8))
+        plt.figure(figsize=(10,10))
         plt.imshow(data, cmap=plt.cm.afmhot)
         plt.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='#7272e8', s=5, label='collocation')
         if title is not None: plt.title(title)
@@ -216,12 +216,14 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
         else: ax2.set_title('Collocation points')
         ax2.axis('off')
     if (boundary_points is not None) and len(boundary_points[:,0])!=0:
-        plt.figure(figsize=(8,8))
+        plt.figure(figsize=(10,10))
         plt.imshow(data, cmap=plt.cm.afmhot)
         plt.scatter(boundary_points[:,1]*y_scale, boundary_points[:,0]*x_scale, c='#7272e8', s=5, label="boundary")
         plt.axis('off')
     #plt.colorbar(im, cax=cax)
     #fig.legend(bbox_to_anchor=(1.2, 1.0))
+    if save_path is not None:
+        plt.savefig(save_path, format='eps', dpi=50)
     plt.show()
 
     
