@@ -25,7 +25,7 @@ def u_eval(c, sig, xc, yc, xe, ye, support=5):
         for j in range(n):
             dist2 = (xe[i]-xc[j])**2 + (ye[i]-yc[j])**2
             if  dist2 > support**2 * sig[j]**2: continue
-            ret[i] += c[j] * exp( -dist2 / (2* sig[j]**2 ) )
+            ret[i] += c[j] * exp( -0.5 * dist2 / sig[j]**2 )
     return ret 
 
 
@@ -188,6 +188,7 @@ def load_data(fits_path):
         z = np.linspace(0., 1., data.shape[2]+2, endpoint=True)[1:-1]
         dfunc = RegularGridInterpolator((x, y, z), data, method='linear', bounds_error=False, fill_value=0.)
         return x,y,z,data,dfunc
+
 
 
 def logistic(x):
