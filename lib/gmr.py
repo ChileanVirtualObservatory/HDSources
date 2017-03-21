@@ -30,6 +30,11 @@ def _det3D(X):
            X[2,0] * (X[0,1] * X[1,2] - X[1,1] * X[0,2])
 
 
+def normal(x, mu, sig):
+    d = mu.shape[0]
+    return (1./np.sqrt((2.*np.pi)**d * np.linalg.det(sig))) * np.exp(-0.5*np.dot(x-mu, np.dot(np.linalg.inv(sig), x-mu)))
+
+
 
 #################################################################
 # MOMENT PRESERVING GAUSSIAN
@@ -42,6 +47,20 @@ def merge(c1, mu1, sig1, c2, mu2, sig2):
     sig_m = (c1/c_m)*sig1 + (c2/c_m)*sig2 + (c1/c_m)*(c2/c_m)*_outer(mu1-mu2, mu1-mu2)
     return (c_m, mu_m, sig_m)
 
+
+###########################################################################
+# ISD: Integral Square Difference
+# ref: Cost-Function-Based Gaussian Mixture Reduction for Target Tracking
+###########################################################################
+
+def ISD_dissimilarity(w1, mu1, sig1, w2, mu2, sig2):
+    # merged moment preserving gaussian
+    w_m, mu_m, sig_m = merge(w1, mu1, sig1, w2, mu2, sig2)
+    # ISD analytical computation between merged component and the pair of gaussians
+    Jhr = w1*w_m * normal(mu1, mu_m, sig1+sig_m) + w2*w_m * normal(mu2, mu_m, sig2*sig_m)
+    Jrr = w_m**2 * normal(mu_m, mu_m, 2*sig_m)
+    Jhh = (w1**2)*normal(mu1, mu1, 2*sig1) + (w2**2)*normal(mu2, mu2, 2*sig2) + 2*w1*w2*normal(mu1, mu2, sig1+sig2)
+    return Jhh - 2*Jhr + Jrr
 
 
 #################################################################
@@ -60,18 +79,16 @@ def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
         return 0.5*((c1+c2)*np.log(_det3D(sig_m)) - c1*np.log(_det3D(sig1)) - c2*np.log(_det3D(sig2)))
 
 
-
-
-
 #################################################################
 # MAIN GAUSSIAN REDUCTION FUNCTION
 #################################################################
 
-def gaussian_reduction(c, mu, sig, n_comp, metric=KL_dissimilarity):
-    if mu.shape[1]==2:
-        c = c.tolist(); mu = list(map(np.array, mu.tolist())); sig = [(s**2)*np.identity(2) for s in sig]
-    elif mu.shape[1]==3:
-        c = c.tolist(); mu = list(map(np.array, mu.tolist())); sig = [(s**2)*np.identity(3) for s in sig]
+def gaussian_reduction(c, mu, sig, n_comp, metric=KL_dissimilarity, verbose=True):
+    d = mu.shape[1]
+    c = c.tolist()
+    mu = list(map(np.array, mu.tolist()))
+    if d==2: sig = [(s**2)*np.identity(2) for s in sig]
+    elif d==3: sig = [(s**2)*np.identity(3) for s in sig]
     # indexes of the actual gaussian components
     components = [[i] for i in range(len(c))]
     components_dict = {len(components) : copy.deepcopy(components)}
@@ -87,7 +104,7 @@ def gaussian_reduction(c, mu, sig, n_comp, metric=KL_dissimilarity):
         # compute the moment preserving  merged gaussian
         c_m, mu_m, sig_m = merge(c[i_min], mu[i_min], sig[i_min], c[j_min], mu[j_min], sig[j_min])
         # updating structures
-        print('Merged components {0} and {1} with {2} dissimilarity'.format(i_min, j_min, diss_min))
+        if verbose: print('Merged components {0} and {1} with {2} dissimilarity'.format(i_min, j_min, diss_min))
         del c[max(i_min, j_min)]; del c[min(i_min, j_min)]; c.append(c_m)
         del mu[max(i_min, j_min)]; del mu[min(i_min, j_min)]; mu.append(mu_m)
         del sig[max(i_min, j_min)]; del sig[min(i_min, j_min)]; sig.append(sig_m)
