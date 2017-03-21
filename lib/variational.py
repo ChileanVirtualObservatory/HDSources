@@ -168,6 +168,18 @@ class ELModel():
         return xc, yc, c, sig
 
 
+    def get_w(self):
+        """
+        Get the mapping from the 'c' coefficients in the linear
+        combination of Gausssian functions, to the 'w' in the
+        linear combination of Normal functions. 
+        """
+        xc, yc, c, sig = self.get_params_mapped()
+        d = len(self.dims)
+        w = c * (2*np.pi*sig**2)**(d/2.)
+        return w
+
+
     def get_residual_stats(self):
         _xe = np.linspace(0., 1., self.dims[0]+2)[1:-1]
         _ye = np.linspace(0., 1., self.dims[1]+2)[1:-1]
