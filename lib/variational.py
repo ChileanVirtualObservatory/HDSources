@@ -296,8 +296,12 @@ class ELModel():
             tmp3 = self.d2psi2(laplacian, lamb2)
             tmp4 = self.d1psi2(laplacian, lamb2)
             el += ne.evaluate('2*b*(2* tmp3*tmp1  + tmp4*tmp2)')
+            
+        # evaluating at boundary
+        fb = self.fb
+        u_boundary = u_eval(c, sig, xc, yc, self.xb, self.yb, self.support) + self.base_level
         
-        return el
+        return np.concatenate([el,u_boundary-fb])
 
 
     def _F(self, params):

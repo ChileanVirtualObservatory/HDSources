@@ -60,6 +60,7 @@ def ISD_dissimilarity(w1, mu1, sig1, w2, mu2, sig2):
     Jhr = w1*w_m * normal(mu1, mu_m, sig1+sig_m) + w2*w_m * normal(mu2, mu_m, sig2*sig_m)
     Jrr = w_m**2 * normal(mu_m, mu_m, 2*sig_m)
     Jhh = (w1**2)*normal(mu1, mu1, 2*sig1) + (w2**2)*normal(mu2, mu2, 2*sig2) + 2*w1*w2*normal(mu1, mu2, sig1+sig2)
+    print(Jhh,Jhr,Jrr)
     return Jhh - 2*Jhr + Jrr
 
 
