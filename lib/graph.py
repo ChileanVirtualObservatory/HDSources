@@ -242,7 +242,7 @@ def components_plot(elm, components_dict, n_comp, n_levels=5):
     plt.title('{0} components solution'.format(n_comp))
     plt.axis('off')
     ax = plt.subplot(1,1,1)
-    ax.imshow(elm.data, cmap=plt.cm.afmhot)
+    ax.imshow(elm.data, cmap=plt.cm.gray)
     color = plt.cm.rainbow(np.linspace(0., 1., n_comp))
     levels = np.linspace(1.05*elm.base_level, 0.95, n_levels)
     
