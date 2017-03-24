@@ -178,7 +178,11 @@ def boundary_points_generation(data, base_level, n_points, method='sampling'):
         selected = list()
 
         while len(selected) != n_points:
-            sel = np.random.choice(points_indexes, size=1 , p=prob.ravel(), replace=False)[0]
+            try:
+                sel = np.random.choice(points_indexes, size=1 , p=prob.ravel(), replace=False)[0]
+            except ValueError:
+                print("No more points can be selected: Only {0} point from the {1} were selected.".format(len(selected), n_points))
+                return points_positions[selected]
             # border pixels can't be selected
             index0 = sel // m
             index1 = sel % n
