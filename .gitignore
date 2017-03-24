@@ -9,6 +9,7 @@ results/
 *.py.un~
 *.pyc
 *.un~
+*.DS_Store
 
 # more trash
 *.ps
