@@ -4,28 +4,6 @@ import numpy as np
 import scipy.stats as st
 
 
-def boundary_generation(n_boundary):
-    xb = []
-    yb = []
-
-    for val in np.linspace(0., 1., n_boundary+1)[0:-1]:
-        xb.append(val)
-        yb.append(0.)
-    for val in np.linspace(0., 1., n_boundary+1)[0:-1]:
-        xb.append(1.)
-        yb.append(val)
-    for val in np.linspace(0., 1., n_boundary+1)[::-1][:-1]:
-        xb.append(val)
-        yb.append(1.)
-    for val in np.linspace(0., 1., n_boundary+1)[::-1][:-1]:
-        xb.append(0.)
-        yb.append(val)
-    xb = np.asarray(xb)
-    yb = np.asarray(yb)
-    boundary_points = np.vstack([xb,yb]).T
-    return boundary_points
-
-
 def _inv_gaussian_kernel(kernlen=3, sig=0.1):
     """
     Returns a 2D Gaussian kernel array.
@@ -122,6 +100,28 @@ def qrandom_centers_generation(dfunc, n_centers, base_level, ndim=2, get_size=50
                 return np.asarray(points_positions)
 
 
+def boundary_generation(n_boundary):
+    xb = []
+    yb = []
+
+    for val in np.linspace(0., 1., n_boundary+1)[0:-1]:
+        xb.append(val)
+        yb.append(0.)
+    for val in np.linspace(0., 1., n_boundary+1)[0:-1]:
+        xb.append(1.)
+        yb.append(val)
+    for val in np.linspace(0., 1., n_boundary+1)[::-1][:-1]:
+        xb.append(val)
+        yb.append(1.)
+    for val in np.linspace(0., 1., n_boundary+1)[::-1][:-1]:
+        xb.append(0.)
+        yb.append(val)
+    xb = np.asarray(xb)
+    yb = np.asarray(yb)
+    boundary_points = np.vstack([xb,yb]).T
+    return boundary_points
+
+
 def boundary_map(data, base_level):
     pixel_map = data > base_level
     m,n = pixel_map.shape
@@ -141,20 +141,54 @@ def boundary_map(data, base_level):
     return border_map
 
 
-def boundary_points_generation(data, base_level, n_points):
-    border_map = boundary_map(data, base_level)
-    x_pos, y_pos = np.where(border_map)
-    # mapping to [0,1] range
-    x_pos = x_pos.astype(float)
-    y_pos = y_pos.astype(float)
-    x_pos /= float(data.shape[0]); x_pos += 0.5/data.shape[0]
-    y_pos /= float(data.shape[1]); y_pos += 0.5/data.shape[1]
-    boundary_points =  np.vstack([x_pos, y_pos]).T
-    # random selecting the specified number of points
-    if n_points > boundary_points.shape[0]:
-        print("Number of can't be greater than the number of border pixels")
-        return None
+def boundary_points_generation(data, base_level, n_points, method='sampling'):
+    #fixed seed
     np.random.seed(0)
-    points_indexes = np.arange(boundary_points.shape[0])
-    selected = np.random.choice(points_indexes, size=n_points)
-    return boundary_points[selected]
+    border_map = boundary_map(data, base_level)
+
+    if method=='random':
+        x_pos, y_pos = np.where(border_map)
+        # mapping to [0,1] range
+        x_pos = x_pos.astype(float)
+        y_pos = y_pos.astype(float)
+        x_pos /= float(data.shape[0]); x_pos += 0.5/data.shape[0]
+        y_pos /= float(data.shape[1]); y_pos += 0.5/data.shape[1]
+        boundary_points =  np.vstack([x_pos, y_pos]).T
+        # random selecting the specified number of points
+        if n_points > boundary_points.shape[0]:
+            print("Number of points can't be greater than the number of border pixels")
+            return None
+        points_indexes = np.arange(boundary_points.shape[0])
+        selected = np.random.choice(points_indexes, size=n_points)
+        return boundary_points[selected]
+
+    elif method=='sampling':
+        m,n = data.shape
+        prob = np.zeros(border_map.shape)
+        prob[border_map] = 1./np.sum(border_map)
+
+        # center points positions
+        x = np.linspace(0., 1., m+2, endpoint=True)[1:-1]
+        y = np.linspace(0., 1., n+2, endpoint=True)[1:-1]
+        X,Y  = np.meshgrid(x, y, indexing='ij')
+        points_positions = np.vstack( [ X.ravel(), Y.ravel() ]).T
+        
+        # array with indexes of such centers
+        points_indexes = np.arange(0, points_positions.shape[0])
+        selected = list()
+
+        while len(selected) != n_points:
+            sel = np.random.choice(points_indexes, size=1 , p=prob.ravel(), replace=False)[0]
+            # border pixels can't be selected
+            index0 = sel // m
+            index1 = sel % n
+            if index0==0 or index0==m-1 or index1==0 or index1==n-1: continue
+            selected.append(sel)
+            # update the pixel probabilities array
+            prob[index0-1:index0+2, index1-1:index1+2] *= 0.
+            prob /= prob.sum()
+        return points_positions[selected]
+    
+    else:
+        print("Invalid method")
+        return None
