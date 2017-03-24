@@ -9,10 +9,10 @@ from utils3D import compute_solution
 
 
 def image_plot(data, title='FITS image'):
-    plt.figure(figsize=(8,8))
-    im = plt.imshow(data, cmap=plt.cm.afmhot)
+    plt.figure(figsize=(10,10))
+    im = plt.imshow(data, cmap=plt.cm.afmhot, interpolation=None)
     plt.title(title)
-    plt.axis('off')
+    #plt.axis('off')
     divider = make_axes_locatable(plt.gca())
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
@@ -20,14 +20,14 @@ def image_plot(data, title='FITS image'):
 
 
 def thresholded_image_plot(data, level):
-    plt.figure(figsize=(8,8))
+    plt.figure(figsize=(10,10))
     ax = plt.gca()
     _data = np.zeros(data.shape)
     mask = data > level
     _data[mask] = data[mask]
     im = ax.imshow(_data, cmap=plt.cm.afmhot)
     plt.title('Thresholded data at: {0}'.format(level))
-    plt.axis('off')
+    #plt.axis('off')
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.08)
     plt.colorbar(im, cax=cax)
@@ -190,14 +190,14 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     if (center_points is not None) and (collocation_points is None):
         plt.figure(figsize=(10,10))
         plt.imshow(data, cmap=plt.cm.afmhot)
-        plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='#7272e8', s=5, label='center')
+        plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='#7272e8', s=8, label='center')
         if title is not None: plt.title(title) 
         else: plt.title('Center points')
         plt.axis('off')
     elif (center_points is None) and (collocation_points is not None):
         plt.figure(figsize=(10,10))
         plt.imshow(data, cmap=plt.cm.afmhot)
-        plt.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='#7272e8', s=5, label='collocation')
+        plt.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='#7272e8', s=8, label='collocation')
         if title is not None: plt.title(title)
         else: plt.title('Collocation points')
         plt.axis('off')
@@ -205,20 +205,20 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
         fig = plt.figure(figsize=(20,15))
         ax1 = fig.add_subplot(121)
         ax1.imshow(data, cmap=plt.cm.afmhot)
-        ax1.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='#7272e8', s=5, label='center')
+        ax1.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='#7272e8', s=8, label='center')
         if title is not None: plt.title(title)
         else: ax1.set_title('Center points')
         ax1.axis('off')
         ax2 = fig.add_subplot(122)
         ax2.imshow(data, cmap=plt.cm.afmhot)
-        ax2.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='#7272e8', s=5, label='collocation')
+        ax2.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='#7272e8', s=8, label='collocation')
         if title is not None: plt.title(title)
         else: ax2.set_title('Collocation points')
         ax2.axis('off')
     if (boundary_points is not None) and len(boundary_points[:,0])!=0:
         plt.figure(figsize=(10,10))
         plt.imshow(data, cmap=plt.cm.afmhot)
-        plt.scatter(boundary_points[:,1]*y_scale, boundary_points[:,0]*x_scale, c='#7272e8', s=5, label="boundary")
+        plt.scatter(boundary_points[:,1]*y_scale, boundary_points[:,0]*x_scale, c='#7272e8', s=8, label="boundary")
         plt.axis('off')
     #plt.colorbar(im, cax=cax)
     #fig.legend(bbox_to_anchor=(1.2, 1.0))
@@ -240,9 +240,9 @@ def components_plot(elm, components_dict, n_comp, n_levels=5):
     
     plt.figure(figsize=(10,10))
     plt.title('{0} components solution'.format(n_comp))
-    plt.axis('off')
+    #plt.axis('off')
     ax = plt.subplot(1,1,1)
-    ax.imshow(elm.data, cmap=plt.cm.gray)
+    ax.imshow(elm.data, cmap=plt.cm.afmhot)
     color = plt.cm.rainbow(np.linspace(0., 1., n_comp))
     levels = np.linspace(1.05*elm.base_level, 0.95, n_levels)
     
@@ -407,3 +407,36 @@ def components_plot3D(elm, components_dict, n_comp, n_levels=10):
         _u -= dmin; _u /= dmax
         ax.contour(_u, levels=levels, colors=[color[i]])
     plt.show()
+
+
+def components_plot3D_(elm, components_dict, n_comp):
+    # get all the (mapped) parameters
+    xc, yc, zc, c, sig = elm.get_params_mapped()
+
+    # generating the evaluation points
+    _xe = np.linspace(0., 1., elm.dims[0]+2)[1:-1]
+    _ye = np.linspace(0., 1., elm.dims[1]+2)[1:-1]
+    _ze = np.linspace(0., 1., elm.dims[2]+2)[1:-1]
+    len_xe = len(_xe); len_ye = len(_ye); len_ze = len(_ze)
+    Xe,Ye,Ze = np.meshgrid(_xe, _ye, _ze, sparse=False, indexing='ij')
+    xe = Xe.ravel(); ye = Ye.ravel(); ze = Ze.ravel()  
+
+    clump_map = np.empty(elm.dims)
+
+    # stacked data, mapping to [0,1] and display 
+    base_level = elm.base_level
+
+    # contours configuration
+    color_index = 20.
+
+    for i,indexes in enumerate(components_dict[n_comp]):
+        _xc = xc[indexes]
+        _yc = yc[indexes]
+        _zc = zc[indexes]
+        _c = c[indexes]
+        _sig = sig[indexes]
+        u = u_eval3D(_c, _sig, _xc, _yc, _zc, xe, ye, ze, support=elm.support) + elm.base_level
+        _u = u.reshape(len_xe, len_ye, len_ze)
+        clump_map[_u > elm.base_level+0.01] = color_index
+        color_index += 20.
+    return clump_map
