@@ -42,10 +42,11 @@ def estimate_initial_guess(center_points, dfunc, R=0.05, minsig=None, maxsig=Non
         #first we find the distance to the nearest neighbor
         for i in range(m):
             for j in range(m):
-                #dont take into account the same point
-                if i==j: continue
-                d = dist_matrix[i,j]
-                if d<min_dist[i]: min_dist[i] = d
+                #dont take into account the same point or
+                #center point in the same position (anomalous case)
+                if dist_matrix[i,j] == 0.: continue
+                if dist_matrix[i,j] < min_dist[i]:
+                    min_dist[i] = dist_matrix[i,j]
         #second, we find the number of neighbors on the neighborhood
         for i in range(m):
             for j in range(m):
