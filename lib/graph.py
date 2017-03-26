@@ -155,13 +155,13 @@ def params_distribution_plot(c, sig, remove_outlier=True):
         c = c[mask1]
         mask2 = sig**2 < 10.*sig2_med
         sig = sig[mask2]
-    plt.figure(figsize=(14,7))
+    plt.figure(figsize=(16,8))
     plt.subplot(1,2,1)
     plt.title('C distribution')
-    plt.hist(c, color='grey', bins=10)
+    plt.hist(c, bins=10, facecolor='green', edgecolor='black', lw=2)
     plt.subplot(1,2,2)
     plt.title('Sig^2 distribution')
-    plt.hist(sig**2, color='grey', bins=10)
+    plt.hist(sig**2, bins=10, facecolor='red', edgecolor='black', lw=2)
     plt.show()
 
 
