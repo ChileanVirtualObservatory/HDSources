@@ -52,15 +52,29 @@ def merge(c1, mu1, sig1, c2, mu2, sig2):
 # ISD: Integral Square Difference
 # ref: Cost-Function-Based Gaussian Mixture Reduction for Target Tracking
 ###########################################################################
-
 def ISD_dissimilarity(w1, mu1, sig1, w2, mu2, sig2):
     # merged moment preserving gaussian
     w_m, mu_m, sig_m = merge(w1, mu1, sig1, w2, mu2, sig2)
     # ISD analytical computation between merged component and the pair of gaussians
-    Jhr = w1*w_m * normal(mu1, mu_m, sig1+sig_m) + w2*w_m * normal(mu2, mu_m, sig2*sig_m)
-    Jrr = w_m**2 * normal(mu_m, mu_m, 2*sig_m)
-    Jhh = (w1**2)*normal(mu1, mu1, 2*sig1) + (w2**2)*normal(mu2, mu2, 2*sig2) + 2*w1*w2*normal(mu1, mu2, sig1+sig2)
-    print(Jhh,Jhr,Jrr)
+    Jhr = w1*w_m * normal(mu1, mu_m, sig1+sig_m) + w2*w_m * normal(mu2, mu_m, sig2+sig_m)
+    Jrr = w_m**2 * (1./np.sqrt((2*np.pi)**2 * np.linalg.det(2*sig_m)))
+    Jhh = (w1**2)*(1./np.sqrt((2*np.pi)**2 * np.linalg.det(2*sig1))) + \
+          (w2**2)*(1./np.sqrt((2*np.pi)**2 * np.linalg.det(2*sig2))) + \
+          2*w1*w2*normal(mu1, mu2, sig1+sig2)
+    return Jhh - 2*Jhr + Jrr
+
+#normalized version
+def ISD_dissimilarity_(w1, mu1, sig1, w2, mu2, sig2):
+    _w1 = w1 / (w1 + w2)
+    _w2 = w2 / (w1 + w2)
+    # merged moment preserving gaussian
+    w_m, mu_m, sig_m = merge(_w1, mu1, sig1, _w2, mu2, sig2)
+    # ISD analytical computation between merged component and the pair of gaussians
+    Jhr = _w1*w_m * normal(mu1, mu_m, sig1+sig_m) + _w2*w_m * normal(mu2, mu_m, sig2+sig_m)
+    Jrr = w_m**2 * (1./np.sqrt((2*np.pi)**2 * np.linalg.det(2*sig_m)))
+    Jhh = (_w1**2)*(1./np.sqrt((2*np.pi)**2 * np.linalg.det(2*sig1))) + \
+          (_w2**2)*(1./np.sqrt((2*np.pi)**2 * np.linalg.det(2*sig2))) + \
+          2*_w1*_w2*normal(mu1, mu2, sig1+sig2)
     return Jhh - 2*Jhr + Jrr
 
 
@@ -84,7 +98,11 @@ def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
 # MAIN GAUSSIAN REDUCTION FUNCTION
 #################################################################
 
-def gaussian_reduction(c, mu, sig, n_comp, metric=KL_dissimilarity, verbose=True):
+def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
+    if metric=='KL': _metric = KL_dissimilarity
+    elif metric=='ISD': _metric = ISD_dissimilarity
+    else: return None
+
     d = mu.shape[1]
     c = c.tolist()
     mu = list(map(np.array, mu.tolist()))
@@ -93,6 +111,7 @@ def gaussian_reduction(c, mu, sig, n_comp, metric=KL_dissimilarity, verbose=True
     # indexes of the actual gaussian components
     components = [[i] for i in range(len(c))]
     components_dict = {len(components) : copy.deepcopy(components)}
+
     # main loop
     while len(components)>n_comp:
         m = len(c)
@@ -100,12 +119,16 @@ def gaussian_reduction(c, mu, sig, n_comp, metric=KL_dissimilarity, verbose=True
         i_min = -1; j_min = -1
         for i in range(m):
             for j in range(i+1,m):
-                diss = metric(c[i], mu[i], sig[i], c[j], mu[j], sig[j])
+                diss = _metric(c[i], mu[i], sig[i], c[j], mu[j], sig[j])
                 if diss < diss_min: i_min = i; j_min = j; diss_min = diss
         # compute the moment preserving  merged gaussian
         c_m, mu_m, sig_m = merge(c[i_min], mu[i_min], sig[i_min], c[j_min], mu[j_min], sig[j_min])
         # updating structures
-        if verbose: print('Merged components {0} and {1} with {2} dissimilarity'.format(i_min, j_min, diss_min))
+        if metric=='ISD' and verbose:
+            print('Merged components {0} and {1} with {2} ISD dist'.format(i_min, j_min, diss_min))    
+        elif metric=='KL' and verbose:
+            ISD_diss = ISD_dissimilarity(c[i_min], mu[i_min], sig[i_min], c[j_min], mu[j_min], sig[j_min])
+            print('Merged components {0} and {1} with {2} KL dist and {3} ISD dist'.format(i_min, j_min, diss_min, ISD_diss))
         del c[max(i_min, j_min)]; del c[min(i_min, j_min)]; c.append(c_m)
         del mu[max(i_min, j_min)]; del mu[min(i_min, j_min)]; mu.append(mu_m)
         del sig[max(i_min, j_min)]; del sig[min(i_min, j_min)]; sig.append(sig_m)
