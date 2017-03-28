@@ -196,9 +196,12 @@ class ELModel():
         else:
             residual = self.data-u
         
+        added_flux = -1 * np.sum(residual[residual<0.])
+
         return (estimate_variance(residual), 
                 estimate_entropy(residual),
-                estimate_rms(residual))
+                estimate_rms(residual),
+                added_flux)
 
     
     def summarize(self, solver_output=True, residual_stats=True, coverage_stats=True, homogeneity_stats=True,
@@ -216,11 +219,12 @@ class ELModel():
             print('nfev: {0}'.format(self.scipy_sol['nfev']))
         
         if residual_stats:
-            var,entr,rms  = self.get_residual_stats()
+            var,entr,rms,added_flux  = self.get_residual_stats()
             print('\nResidual stats:')
             print('Residual RMS: {0}'.format(rms))
             print('Residual Variance: {0}'.format(var))
             print('Residual Entropy: {0}'.format(entr))
+            print('Added Flux: {0}'.format(added_flux))
             print('Total elapsed time: {0} [s]'.format(self.elapsed_time))
 
         if coverage_stats:
