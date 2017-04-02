@@ -99,8 +99,12 @@ def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
 #################################################################
 
 def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
-    if metric=='KL': _metric = KL_dissimilarity
-    elif metric=='ISD': _metric = ISD_dissimilarity
+    if metric=='KL': 
+        _metric = KL_dissimilarity
+        isd_hist = list(); kl_hist = list()
+    elif metric=='ISD': 
+        _metric = ISD_dissimilarity
+        isd_hist = list(); kl_hist = None
     else: return None
 
     d = mu.shape[1]
@@ -125,10 +129,12 @@ def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
         c_m, mu_m, sig_m = merge(c[i_min], mu[i_min], sig[i_min], c[j_min], mu[j_min], sig[j_min])
         # updating structures
         if metric=='ISD' and verbose:
-            print('Merged components {0} and {1} with {2} ISD dist'.format(i_min, j_min, diss_min))    
+            print('Merged components {0} and {1} with {2} ISD dist'.format(i_min, j_min, diss_min))
+            isd_hist.append(diss_min)    
         elif metric=='KL' and verbose:
             ISD_diss = ISD_dissimilarity(c[i_min], mu[i_min], sig[i_min], c[j_min], mu[j_min], sig[j_min])
             print('Merged components {0} and {1} with {2} KL dist and {3} ISD dist'.format(i_min, j_min, diss_min, ISD_diss))
+            isd_hist.append(ISD_diss), kl_hist.append(diss_min)
         del c[max(i_min, j_min)]; del c[min(i_min, j_min)]; c.append(c_m)
         del mu[max(i_min, j_min)]; del mu[min(i_min, j_min)]; mu.append(mu_m)
         del sig[max(i_min, j_min)]; del sig[min(i_min, j_min)]; sig.append(sig_m)
@@ -136,4 +142,4 @@ def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
         new_component.sort()
         components.append(new_component)
         components_dict[m-1] = copy.deepcopy(components)
-    return components_dict
+    return components_dict, isd_hist, kl_hist
