@@ -32,6 +32,7 @@ def thresholded_image_plot(data, level):
     cax = divider.append_axes("right", size="5%", pad=0.08)
     plt.colorbar(im, cax=cax)
     plt.show()
+    print("{0} usable pixels out of {1}".format(np.sum(mask), data.shape[0]*data.shape[1]))
 
 
 def plotter(dfunc, c, sig, xc, resolution=10, title=None):
