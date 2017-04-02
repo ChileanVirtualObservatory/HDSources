@@ -188,7 +188,7 @@ class ELModel():
 
         xc, yc, c, sig = self.get_params_mapped()
 
-        u = u_eval(c, sig, xc, yc, xe, ye, support=self.support)
+        u = u_eval(c, sig, xc, yc, xe, ye, support=self.support) + self.base_level
         u = u.reshape(self.dims)
 
         if self.mask is not None:
@@ -196,7 +196,7 @@ class ELModel():
         else:
             residual = self.data-u
         
-        added_flux = -1 * np.sum(residual[residual<0.])
+        added_flux = -1. * np.sum(residual[residual<0.])
 
         return (estimate_variance(residual), 
                 estimate_entropy(residual),
