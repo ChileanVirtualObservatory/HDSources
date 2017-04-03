@@ -105,6 +105,9 @@ def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
     elif metric=='ISD': 
         _metric = ISD_dissimilarity
         isd_hist = list(); kl_hist = None
+    elif metric=='ISD_':
+        _metric = ISD_dissimilarity_
+        isd_hist = list(); kl_hist = None
     else: return None
 
     d = mu.shape[1]
@@ -128,7 +131,7 @@ def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
         # compute the moment preserving  merged gaussian
         c_m, mu_m, sig_m = merge(c[i_min], mu[i_min], sig[i_min], c[j_min], mu[j_min], sig[j_min])
         # updating structures
-        if metric=='ISD' and verbose:
+        if (metric=='ISD' or metric=='ISD_') and verbose:
             print('Merged components {0} and {1} with {2} ISD dist'.format(i_min, j_min, diss_min))
             isd_hist.append(diss_min)    
         elif metric=='KL' and verbose:

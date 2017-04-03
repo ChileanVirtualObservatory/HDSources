@@ -100,7 +100,7 @@ def qrandom_centers_generation(dfunc, n_centers, base_level, ndim=2, get_size=50
                 return np.asarray(points_positions)
 
 
-def boundary_generation(n_boundary):
+def _boundary_generation(n_boundary):
     xb = []
     yb = []
 
