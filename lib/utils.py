@@ -219,3 +219,11 @@ def mean_min_dist(points1, points2):
     D = np.sqrt(Dx**2 + Dy**2)
     return np.mean( np.min(D, axis=1) )
 
+
+def lower_prune(vec):
+    mean = np.mean(vec)
+    median = np.median(vec)
+    #all values greater than 1e-3 the mean/median
+    mask = vec > 1e-3*min(mean,median)
+    return mask, vec[mask]
+
