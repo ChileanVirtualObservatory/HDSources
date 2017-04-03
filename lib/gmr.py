@@ -63,6 +63,7 @@ def ISD_dissimilarity(w1, mu1, sig1, w2, mu2, sig2):
           2*w1*w2*normal(mu1, mu2, sig1+sig2)
     return Jhh - 2*Jhr + Jrr
 
+
 #normalized version
 def ISD_dissimilarity_(w1, mu1, sig1, w2, mu2, sig2):
     _w1 = w1 / (w1 + w2)
@@ -82,7 +83,6 @@ def ISD_dissimilarity_(w1, mu1, sig1, w2, mu2, sig2):
 # KL-DIVERGENCE UPPER BOUND
 # ref: A Kullback-Leibler Approach to Gaussian Mixture Reduction
 #################################################################
-
 @numba.jit('float64 (float64, float64[:], float64[:,:], float64, float64[:], float64[:,:])', nopython=True)
 def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
     # merged moment preserving gaussian
@@ -145,4 +145,4 @@ def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
         new_component.sort()
         components.append(new_component)
         components_dict[m-1] = copy.deepcopy(components)
-    return components_dict, isd_hist, kl_hist
+    return components_dict, np.array(isd_hist), np.array(kl_hist)
