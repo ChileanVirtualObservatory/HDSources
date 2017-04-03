@@ -203,6 +203,18 @@ class ELModel():
                 estimate_rms(residual),
                 added_flux)
 
+
+    def lower_prune(self):
+        w = self.get_w()
+        mask, _ = lower_prune(w)
+        #update all the arrays
+        self.xc = self.xc[mask]; self.xc0 = self.xc0[mask]
+        self.yc = self.yc[mask]; self.yc0 = self.yc0[mask]
+        self.theta_xc = self.theta_xc[mask]
+        self.theta_yc = self.theta_yc[mask]
+        self.c = self.c[mask]
+        self.sig = self.sig[mask]
+
     
     def summarize(self, solver_output=True, residual_stats=True, coverage_stats=True, homogeneity_stats=True,
                   solution_plot=True, params_plot=True):
