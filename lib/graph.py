@@ -5,6 +5,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from utils import u_eval
 from utils3D import u_eval as u_eval3D
 from utils3D import compute_solution
+from gmr import isd_diss_full
 
 
 
@@ -228,7 +229,7 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     plt.show()
 
     
-def components_plot(elm, components_dict, n_comp, n_levels=5):
+def components_plot(elm, components_dict, n_comp, n_levels=5, show_isd=False):
     # get all the (mapped) parameters
     xc, yc, c, sig = elm.get_params_mapped()
     
@@ -246,6 +247,14 @@ def components_plot(elm, components_dict, n_comp, n_levels=5):
     ax.imshow(elm.data, cmap=plt.cm.afmhot)
     color = plt.cm.rainbow(np.linspace(0., 1., n_comp))
     levels = np.linspace(1.05*elm.base_level, 0.95, n_levels)
+
+    if show_isd:
+        # putting parameters in the correct format
+        w = elm.get_w()
+        mu = np.vstack([xc,yc]).T
+        Sig = np.zeros((len(w),2,2))
+        Sig[:,0,0] = sig; Sig[:,1,1] = sig
+
     
     for i,indexes in enumerate(components_dict[n_comp]):
         _xc = xc[indexes]
@@ -254,16 +263,17 @@ def components_plot(elm, components_dict, n_comp, n_levels=5):
         _sig = sig[indexes]
         u = u_eval(_c, _sig, _xc, _yc, xe, ye, support=elm.support) + elm.base_level
         _u = u.reshape(len_xe, len_ye)
-        
-        ax.contour(_u, levels=levels, colors=[color[i]])
-        #plt.subplot(n_comp,1, i+1)
-        #ax = plt.gca()
-        #im = ax.imshow(_u, vmin=0., vmax=1.)
-        #plt.axis('off')
-        #divider = make_axes_locatable(ax)
-        #cax = divider.append_axes("right", size="5%", pad=0.05)
-        #plt.colorbar(im, cax=cax)
+
+        if show_isd:
+            _isd = isd_diss_full(w[indexes], mu[indexes], Sig[indexes])
+            cs = ax.contour(_u, levels=levels, colors=[color[i]])
+            cs.collections[0].set_label('ISD: {0}'.format(_isd))
+        else:
+            ax.contour(_u, levels=levels, colors=[color[i]])
+    if show_isd: plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
     plt.show()
+
+
     
 
 ########################################################
