@@ -30,6 +30,7 @@ def _det3D(X):
            X[2,0] * (X[0,1] * X[1,2] - X[1,1] * X[0,2])
 
 
+@numba.jit('float64 (float64[:], float64[:], float64[:,:])', nopython=True)
 def normal(x, mu, sig):
     d = mu.shape[0]
     return (1./np.sqrt((2.*np.pi)**d * np.linalg.det(sig))) * np.exp(-0.5*np.dot(x-mu, np.dot(np.linalg.inv(sig), x-mu)))
@@ -40,7 +41,8 @@ def normal(x, mu, sig):
 # MOMENT PRESERVING GAUSSIAN
 #################################################################
 
-@numba.jit('Tuple((float64, float64[:], float64[:,:])) (float64, float64[:], float64[:,:], float64, float64[:], float64[:,:])', nopython=True)
+@numba.jit('Tuple((float64, float64[:], float64[:,:])) (float64, float64[:], \
+            float64[:,:], float64, float64[:], float64[:,:])', nopython=True)
 def merge(c1, mu1, sig1, c2, mu2, sig2):
     c_m = c1+c2
     mu_m = (c1/c_m)*mu1 + (c2/c_m)*mu2
@@ -48,11 +50,35 @@ def merge(c1, mu1, sig1, c2, mu2, sig2):
     return (c_m, mu_m, sig_m)
 
 
+@numba.jit('Tuple((float64, float64[:], float64[:,:])) (float64[:], \
+            float64[:,:], float64[:,:,:])', nopython=True)
+def merge_full(w, mu, sig):
+    n = mu.shape[0]
+    d = mu.shape[1]
+    w_m = np.sum(w)
+    mu_m = np.zeros(d)
+    sig_m = np.zeros((d,d))
+
+    #mean calculation
+    for i in range(n):
+        mu_m += w[i]*mu[i]
+    mu_m /= w_m
+
+    #covariance calculation
+    for i in range(n):
+        sig_m += w[i] * ( sig[i] + _outer(mu[i]-mu_m, mu[i]-mu_m) )
+    sig_m /= w_m
+
+    return (w_m, mu_m, sig_m)
+
+
+
 ###########################################################################
 # ISD: Integral Square Difference
 # ref: Cost-Function-Based Gaussian Mixture Reduction for Target Tracking
 ###########################################################################
-def ISD_dissimilarity(w1, mu1, sig1, w2, mu2, sig2):
+@numba.jit('float64 (float64, float64[:], float64[:,:], float64, float64[:], float64[:,:])', nopython=True)
+def isd_diss(w1, mu1, sig1, w2, mu2, sig2):
     # merged moment preserving gaussian
     w_m, mu_m, sig_m = merge(w1, mu1, sig1, w2, mu2, sig2)
     # ISD analytical computation between merged component and the pair of gaussians
@@ -65,7 +91,8 @@ def ISD_dissimilarity(w1, mu1, sig1, w2, mu2, sig2):
 
 
 #normalized version
-def ISD_dissimilarity_(w1, mu1, sig1, w2, mu2, sig2):
+@numba.jit('float64 (float64, float64[:], float64[:,:], float64, float64[:], float64[:,:])', nopython=True)
+def isd_diss_(w1, mu1, sig1, w2, mu2, sig2):
     _w1 = w1 / (w1 + w2)
     _w2 = w2 / (w1 + w2)
     # merged moment preserving gaussian
@@ -79,12 +106,34 @@ def ISD_dissimilarity_(w1, mu1, sig1, w2, mu2, sig2):
     return Jhh - 2*Jhr + Jrr
 
 
+@numba.jit('float64 (float64[:], float64[:,:], float64[:,:,:])', nopython=True)
+def isd_diss_full(w, mu, sig):
+    # number of components
+    c = len(w)
+    # merged moment preserving gaussian
+    w_m, mu_m, sig_m = merge_full(w, mu, sig)
+    # ISD computation between merge and components
+    Jhr = 0.
+    Jrr = w_m**2 * (1./np.sqrt((2*np.pi)**2 * np.linalg.det(2*sig_m)))
+    Jhh = 0.
+
+    for i in range(c):  
+        Jhr += w[i]*w_m * normal(mu[i], mu_m, sig[i]+sig_m)
+    
+    for i in range(c):
+        for j in range(c):
+            Jhh += w[i]*w[j] * normal(mu[i], mu[j], sig[i]+sig[j])
+
+    return Jhh - 2*Jhr + Jrr
+
+
+
 #################################################################
 # KL-DIVERGENCE UPPER BOUND
 # ref: A Kullback-Leibler Approach to Gaussian Mixture Reduction
 #################################################################
 @numba.jit('float64 (float64, float64[:], float64[:,:], float64, float64[:], float64[:,:])', nopython=True)
-def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
+def kl_diss(c1, mu1, sig1, c2, mu2, sig2):
     # merged moment preserving gaussian
     c_m, mu_m, sig_m = merge(c1, mu1, sig1, c2, mu2, sig2)
     # KL divergence upper bound as proposed in: A Kullback-Leibler Approach to Gaussian Mixture Reduction
@@ -100,13 +149,13 @@ def KL_dissimilarity(c1, mu1, sig1, c2, mu2, sig2):
 
 def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
     if metric=='KL': 
-        _metric = KL_dissimilarity
+        _metric = kl_diss
         isd_hist = list(); kl_hist = list()
     elif metric=='ISD': 
-        _metric = ISD_dissimilarity
+        _metric = isd_diss
         isd_hist = list(); kl_hist = None
     elif metric=='ISD_':
-        _metric = ISD_dissimilarity_
+        _metric = isd_diss_
         isd_hist = list(); kl_hist = None
     else: return None
 
@@ -135,7 +184,7 @@ def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
             print('Merged components {0} and {1} with {2} ISD dist'.format(i_min, j_min, diss_min))
             isd_hist.append(diss_min)    
         elif metric=='KL' and verbose:
-            ISD_diss = ISD_dissimilarity(c[i_min], mu[i_min], sig[i_min], c[j_min], mu[j_min], sig[j_min])
+            ISD_diss = isd_diss(c[i_min], mu[i_min], sig[i_min], c[j_min], mu[j_min], sig[j_min])
             print('Merged components {0} and {1} with {2} KL dist and {3} ISD dist'.format(i_min, j_min, diss_min, ISD_diss))
             isd_hist.append(ISD_diss), kl_hist.append(diss_min)
         del c[max(i_min, j_min)]; del c[min(i_min, j_min)]; c.append(c_m)
