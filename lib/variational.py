@@ -196,17 +196,26 @@ class ELModel():
         else:
             residual = self.data-u
         
-        added_flux = -1. * np.sum(residual[residual<0.])
+        # first term of Lagrangian stats
+        flux_mask = residual<0.
+        added_flux = -1. * np.sum(residual[flux_mask])
+        psi1 = np.sum(psi(-1*residual))
+        n_pix = np.sum(flux_mask)
+
+        # second term of Lagrangian stats
+        img_grad = gradient(u)
+        sharpness = np.sum(img_grad)
+        psi2 = np.sum(psi(img_grad))
 
         return (estimate_variance(residual), 
                 estimate_entropy(residual),
                 estimate_rms(residual),
-                added_flux)
+                added_flux, psi1, n_pix, sharpness, psi2)
 
 
-    def lower_prune(self):
+    def prune(self):
         w = self.get_w()
-        mask, _ = lower_prune(w)
+        mask, _ = prune(w)
         #update all the arrays
         self.xc = self.xc[mask]; self.xc0 = self.xc0[mask]
         self.yc = self.yc[mask]; self.yc0 = self.yc0[mask]
@@ -222,6 +231,8 @@ class ELModel():
         print('FINAL RESULTS:')
         print('#'*90 + '\n')
         _xc, _yc, _c, _sig = self.get_params_mapped()
+
+        var,entr,rms,added_flux,psi1,n_pix,sharpness,psi2  = self.get_residual_stats()
         
         if solver_output:
             print('Solver Output:')
@@ -231,12 +242,16 @@ class ELModel():
             print('nfev: {0}'.format(self.scipy_sol['nfev']))
         
         if residual_stats:
-            var,entr,rms,added_flux  = self.get_residual_stats()
             print('\nResidual stats:')
             print('Residual RMS: {0}'.format(rms))
             print('Residual Variance: {0}'.format(var))
-            print('Residual Entropy: {0}'.format(entr))
+            #print('Residual Entropy: {0}'.format(entr))
             print('Added Flux: {0}'.format(added_flux))
+            print('Psi1(u-f): {0}'.format(psi1))
+            print('#Exceeded Pixels: {0}'.format(n_pix))
+            print('Sharpness: {0}'.format(sharpness))
+            print('Psi2(grad u): {0}'.format(psi2))
+
             print('Total elapsed time: {0} [s]'.format(self.elapsed_time))
 
         if coverage_stats:
@@ -262,7 +277,10 @@ class ELModel():
 
         
         if solution_plot:
-            gp.solution_plot(self.dfunc, _c, _sig, _xc, _yc, dims=self.dims, base_level=self.base_level, support=self.support)
+            gp.solution_plot(self.dfunc, _c, _sig, _xc, _yc, dims=self.dims, 
+                             base_level=self.base_level, support=self.support)
+            #gp.image_plot(img_grad, title='Gradient')
+            #gp.image_plot(img_sign, title='Exceeded Pixels')
         
         if params_plot:
             gp.params_plot(_c, _sig, _xc, _yc)
