@@ -195,3 +195,42 @@ def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
         components.append(new_component)
         components_dict[m-1] = copy.deepcopy(components)
     return components_dict, np.array(isd_hist), np.array(kl_hist)
+
+
+def gaussian_reduction_(c, mu, _sig, n_comp, metric='KL', verbose=True):
+    """
+    Maray's approach for Gaussian reduction with ISD
+    """
+
+    # putting it in the correct format
+    sig = np.zeros((len(c),2,2))
+    sig[:,0,0] = _sig**2; sig[:,1,1] = _sig**2
+
+    # indexes of the actual gaussian components
+    components = [[i] for i in range(len(c))]
+    components_dict = {len(components) : copy.deepcopy(components)}
+    isd_hist = list()
+
+    # main loop
+    while len(components)>n_comp:
+        m = len(components)
+        diss_min = np.inf
+        i_min = -1; j_min = -1
+        for i in range(m):
+            for j in range(i+1,m):
+                indexes_i = components[i]
+                indexes_j = components[j]
+                c_ij = np.hstack( [c[indexes_i], c[indexes_j]] )
+                mu_ij = np.vstack( [mu[indexes_i], mu[indexes_j]] )
+                sig_ij = np.vstack( [sig[indexes_i], sig[indexes_j]] )
+                diss = isd_diss_full(c_ij, mu_ij, sig_ij)
+                if diss < diss_min: i_min = i; j_min = j; diss_min = diss
+
+        print('Merged components {0} and {1} with {2} ISD dist'.format(i_min, j_min, diss_min))
+        isd_hist.append(diss_min)    
+
+        new_component = components.pop(max(i_min,j_min)) + components.pop(min(i_min,j_min))
+        new_component.sort()
+        components.append(new_component)
+        components_dict[m-1] = copy.deepcopy(components)
+    return components_dict, isd_hist
