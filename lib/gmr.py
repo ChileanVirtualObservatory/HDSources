@@ -36,6 +36,12 @@ def normal(x, mu, sig):
     return (1./np.sqrt((2.*np.pi)**d * np.linalg.det(sig))) * np.exp(-0.5*np.dot(x-mu, np.dot(np.linalg.inv(sig), x-mu)))
 
 
+def remove(l, indexes):
+    """
+    Remove elements from list
+    yielding a new list
+    """
+    return [val for i,val in enumerate(l) if i not in indexes]
 
 #################################################################
 # MOMENT PRESERVING GAUSSIAN
@@ -123,6 +129,33 @@ def isd_diss_full(w, mu, sig):
     for i in range(c):
         for j in range(c):
             Jhh += w[i]*w[j] * normal(mu[i], mu[j], sig[i]+sig[j])
+
+    return Jhh - 2*Jhr + Jrr
+
+
+@numba.jit('float64 (float64[:], float64[:,:], float64[:,:,:], \
+                     float64[:], float64[:,:], float64[:,:,:])', nopython=True)
+def isd_diss_full_(w1, mu1, sig1, w2, mu2, sig2):
+    # number of components
+    h = len(w1)
+    r = len(w2)
+
+    # ISD computation between merge and components
+    Jhr = 0.
+    Jrr = 0.
+    Jhh = 0.
+
+    for i in range(h):
+        for j in range(r):
+            Jhr += w1[i]*w2[j] * normal(mu1[i], mu2[j], sig1[i]+sig2[j])
+
+    for i in range(r):
+        for j in range(r):
+            Jrr += w2[i]*w2[j] * normal(mu2[i], mu2[j], sig2[i]+sig2[j])
+    
+    for i in range(h):
+        for j in range(h):
+            Jhh += w1[i]*w1[j] * normal(mu1[i], mu1[j], sig1[i]+sig1[j])
 
     return Jhh - 2*Jhr + Jrr
 
@@ -234,3 +267,52 @@ def gaussian_reduction_(c, mu, _sig, n_comp, metric='KL', verbose=True):
         components.append(new_component)
         components_dict[m-1] = copy.deepcopy(components)
     return components_dict, isd_hist
+
+
+def gaussian_reduction__(c, mu, _sig, n_comp, metric='KL', verbose=True):
+    # putting it in the correct format
+    sig = np.zeros((len(c),2,2))
+    sig[:,0,0] = _sig**2; sig[:,1,1] = _sig**2
+
+    d = mu.shape[1]
+    c = c.tolist()
+    mu = list(map(np.array, mu.tolist()))
+    sig = list(map(np.array, sig.tolist()))
+
+    # indexes of the actual gaussian components
+    components = [[i] for i in range(len(c))]
+    components_dict = {len(components) : copy.deepcopy(components)}
+    isd_hist = list()
+
+    # main loop
+    while len(components)>n_comp:
+        m = len(c)
+        diss_min = np.inf
+        i_min = -1; j_min = -1
+        for i in range(m):
+            for j in range(i+1,m):
+                c_m, mu_m, sig_m = merge(c[i], mu[i], sig[i], c[j], mu[j], sig[j])
+                _c = remove(c, [i,j]); _c.append(c_m)
+                _mu = remove(mu, [i,j]); _mu.append(mu_m)
+                _sig = remove(sig, [i,j]); _sig.append(sig_m)
+                diss = isd_diss_full_(np.array(c), np.array(mu), np.array(sig), 
+                                     np.array(_c), np.array(_mu), np.array(_sig))
+                if diss < diss_min: i_min = i; j_min = j; diss_min = diss
+        # compute the moment preserving  merged gaussian
+        c_m, mu_m, sig_m = merge(c[i_min], mu[i_min], sig[i_min], c[j_min], mu[j_min], sig[j_min])
+        print('Merged components {0} and {1} with {2} ISD dist'.format(i_min, j_min, diss_min))
+        isd_hist.append(diss_min)    
+
+        # updating structures
+        del c[max(i_min, j_min)]; del c[min(i_min, j_min)]; c.append(c_m)
+        del mu[max(i_min, j_min)]; del mu[min(i_min, j_min)]; mu.append(mu_m)
+        del sig[max(i_min, j_min)]; del sig[min(i_min, j_min)]; sig.append(sig_m)
+        new_component = components.pop(max(i_min,j_min)) + components.pop(min(i_min,j_min))
+        new_component.sort()
+        components.append(new_component)
+        components_dict[m-1] = copy.deepcopy(components)
+    return components_dict, np.array(isd_hist)
+
+
+
+
