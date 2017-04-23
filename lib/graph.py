@@ -116,19 +116,19 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
 
 
 
-def params_plot(c, sig, xc, yc, remove_outlier=True):
+def params_plot(c, sig, xc, yc, remove_outlier=False):
     if remove_outlier:
         # just keeping values less than 10 times the mean
         c_med = np.median(c)
         mask1 = c < 10.*c_med
-        c_ = c[mask1]
-        xc_ = xc[mask1]; yc_ = yc[mask1]
+        c = c[mask1]
+        xc = xc[mask1]; yc = yc[mask1]
     plt.figure(figsize=(17,7))
     plt.subplot(1,2,1)
     plt.title('Plot of c parameters')
     plt.xlim(-0.01,1.01)
     plt.ylim(-0.01,1.01)
-    plt.scatter(yc_, xc_ , c=c_)
+    plt.scatter(yc, xc , c=c)
     plt.gca().invert_yaxis()
     plt.colorbar()
     plt.subplot(1,2,2)
@@ -136,19 +136,19 @@ def params_plot(c, sig, xc, yc, remove_outlier=True):
         # just keeping values less than 10 times the mean
         sig2_med = np.median(sig**2)
         mask2 = sig**2 < 10.*sig2_med
-        sig_ = sig[mask2]
-        xc_ = xc[mask2]; yc_ = yc[mask2]
+        sig = sig[mask2]
+        xc = xc[mask2]; yc = yc[mask2]
     plt.title('Plot of sig^2 parameters')
     plt.xlim(-0.01,1.01)
     plt.ylim(-0.01,1.01)
-    plt.scatter(yc_, xc_, c=sig_**2)
+    plt.scatter(yc, xc, c=sig**2)
     plt.gca().invert_yaxis()
     plt.colorbar()
     plt.show()
  
 
 
-def params_distribution_plot(c, sig, remove_outlier=True):
+def params_distribution_plot(c, sig, remove_outlier=False):
     if remove_outlier:
         # just keeping values less than 10 times the median
         c_med = np.median(c)
