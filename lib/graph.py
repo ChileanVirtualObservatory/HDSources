@@ -451,3 +451,54 @@ def components_plot3D_(elm, components_dict, n_comp):
         clump_map[_u > elm.base_level+0.01] = color_index
         color_index += 20.
     return clump_map
+
+
+def stats_plot(x_var, r_stats, x_label='', loglog=False, n=5, slopes=None):
+    y_label = ['RMS', 'Variance', 'Flux addition', 'Flux lost', \
+                'Psi1 int', 'Excedeed pixels', 'Sharpness', 'Psi2 int']
+    
+    # unpacking the values
+    r_stats_list = []
+    r_stats_list.append( np.array([var for (var,_,_,_,_,_,_,_,_) in r_stats]) )
+    #r_stats_list.append( np.array([entr for (_,entr,_,_,_,_,_,_,_) in r_stats]) )
+    r_stats_list.append( np.array([rms for (_,_,rms,_,_,_,_,_,_) in r_stats]) )
+    r_stats_list.append( np.array([flux for (_,_,_,flux,_,_,_,_,_) in r_stats]) )
+    r_stats_list.append( np.array([flux for (_,_,_,_,flux,_,_,_,_) in r_stats]) )
+    r_stats_list.append( np.array([psi1 for (_,_,_,_,_,psi1,_,_,_) in r_stats]) )
+    r_stats_list.append( np.array([npix for (_,_,_,_,_,_,npix,_,_) in r_stats]) )
+    r_stats_list.append( np.array([sharp for (_,_,_,_,_,_,_,sharp,_) in r_stats]) )
+    r_stats_list.append( np.array([psi2 for (_,_,_,_,_,_,_,_,psi2) in r_stats]) )
+    
+    ## compute slope
+    #if loglog and (slopes is not None) :
+    #    slopes = []
+    #    for r_stat in r_stats_list:
+    #        s = 0.
+    #        for i in range(n): s += r_stat[i+1]-r_stat[i]
+    #        slopes.append(s)
+    
+    # plots
+    colors = plt.cm.rainbow(np.linspace(0., 1., len(r_stats_list)))
+    for i,r_stat in enumerate(r_stats_list):
+        fig = plt.figure(figsize=(17,6))
+        fig.subplots_adjust(wspace=0.25)
+        plt.subplot(1,2,1)
+        plt.plot(x_var, r_stat, color=colors[i], marker='o')
+        plt.grid()
+        plt.xlabel(x_label, fontsize=20)
+        plt.ylabel(y_label[i], fontsize=20)
+        plt.subplot(1,2,2)
+        if loglog:
+            plt.loglog(x_var, r_stat, color=colors[i], marker='o')
+            plt.grid()
+            plt.xlabel(x_label, fontsize=20)
+            plt.ylabel(y_label[i], fontsize=20)
+            line = (r_stat[1]/x_var[1]**(slopes[i])) * x_var**(slopes[i])
+            plt.plot(x_var, line, color='k', label='slope={0}'.format(slopes[i]))
+            plt.legend(bbox_to_anchor=(1.3, 1.0))
+        else:
+            plt.semilogy(x_var, r_stat, color=colors[i], marker='o')
+            plt.grid()
+            plt.xlabel(x_label, fontsize=20)
+            plt.ylabel(y_label[i], fontsize=20)
+        plt.show()
