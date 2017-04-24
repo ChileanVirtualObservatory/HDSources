@@ -116,6 +116,7 @@ class ELModel():
         # solution variables
         self.scipy_sol = None
         self.elapsed_time = None
+        self.residual_stats = None
 
 
     def set_centers(self, theta_xc, theta_yc):
@@ -201,17 +202,20 @@ class ELModel():
         flux_mask = residual<0.
         flux_addition = -1. * np.sum(residual[flux_mask])
         flux_lost = np.sum(residual[~flux_mask])
-        psi1 = np.sum(psi(-1*residual))
-        n_pix = np.sum(flux_mask)
+        psi1_int = np.sum(psi(-1*residual))
+        npix = np.sum(flux_mask)
 
         # second term of Lagrangian stats
         img_grad = gradient(u)
         sharpness = np.sum(img_grad)
-        psi2 = np.sum(psi(img_grad))
+        psi2_int = np.sum(psi(img_grad))
 
-        return (estimate_variance(residual), estimate_entropy(residual),
-                estimate_rms(residual), flux_addition/total_flux,
-                flux_lost/total_flux, psi1, n_pix, sharpness, psi2)
+        residual_stats = estimate_variance(residual), estimate_entropy(residual), \
+                         estimate_rms(residual), flux_addition/total_flux,
+                         flux_lost/total_flux, psi1_int, npix, sharpness, psi2_int
+        self.residual_stats = residual_stats
+
+        return residual_stats
 
 
     def prune(self):
@@ -234,7 +238,7 @@ class ELModel():
         _xc, _yc, _c, _sig = self.get_params_mapped()
 
         out = self.get_residual_stats()
-        var,entr,rms,flux_addition,flux_lost,psi1,n_pix,sharpness,psi2 = out
+        var,entr,rms,flux_addition,flux_lost,psi1_int,npix,sharpness,psi2_int = out
         
         if solver_output:
             print('Solver Output:')
@@ -250,10 +254,10 @@ class ELModel():
             #print('Residual Entropy: {0}'.format(entr))
             print('Flux Lost: {0}'.format(flux_lost))
             print('Flux Addition: {0}'.format(flux_addition))
-            print('Psi1(u-f): {0}'.format(psi1))
-            print('#Exceeded Pixels: {0}'.format(n_pix))
+            print('psi1(u-f): {0}'.format(psi1_int))
+            print('Exceeded Pixels: {0}'.format(npix))
             print('Sharpness: {0}'.format(sharpness))
-            print('Psi2(grad u): {0}'.format(psi2))
+            print('psi2(grad u): {0}'.format(psi2_int))
 
             print('Total elapsed time: {0} [s]'.format(self.elapsed_time))
 
