@@ -1,6 +1,7 @@
 import ghalton
 import copy
 import numpy as np
+import numpy.ma as ma
 import scipy.stats as st
 
 
@@ -123,8 +124,10 @@ def _boundary_generation(n_boundary):
 
 
 def boundary_map(data, base_level):
+    m,n = data.shape
     pixel_map = data > base_level
-    m,n = pixel_map.shape
+    if isinstance(pixel_map, ma.MaskedArray):
+        pixel_map = pixel_map.filled(fill_value=False)
     border_map = np.zeros((m,n), dtype=bool)
     for i in range(m):
         for j in range(n):
@@ -138,6 +141,8 @@ def boundary_map(data, base_level):
                     # in case pixel_map[i,j] has a unusable neighbor pixel
                     # then pixel_map[i,j] is a border pixel
                     if pixel_map[i+p,j+q]==False: border_map[i,j] = True
+
+
     return border_map
 
 
