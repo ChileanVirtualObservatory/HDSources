@@ -211,7 +211,7 @@ class ELModel():
         psi2_int = np.sum(psi(img_grad))
 
         residual_stats = estimate_variance(residual), estimate_entropy(residual), \
-                         estimate_rms(residual), flux_addition/total_flux,
+                         estimate_rms(residual), flux_addition/total_flux, \
                          flux_lost/total_flux, psi1_int, npix, sharpness, psi2_int
         self.residual_stats = residual_stats
 
