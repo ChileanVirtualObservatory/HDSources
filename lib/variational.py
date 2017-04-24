@@ -197,8 +197,10 @@ class ELModel():
             residual = self.data-u
         
         # first term of Lagrangian stats
+        total_flux = np.sum(self.data[self.mask])
         flux_mask = residual<0.
-        added_flux = -1. * np.sum(residual[flux_mask])
+        flux_addition = -1. * np.sum(residual[flux_mask])
+        flux_lost = np.sum(residual[~flux_mask])
         psi1 = np.sum(psi(-1*residual))
         n_pix = np.sum(flux_mask)
 
@@ -207,10 +209,9 @@ class ELModel():
         sharpness = np.sum(img_grad)
         psi2 = np.sum(psi(img_grad))
 
-        return (estimate_variance(residual), 
-                estimate_entropy(residual),
-                estimate_rms(residual),
-                added_flux, psi1, n_pix, sharpness, psi2)
+        return (estimate_variance(residual), estimate_entropy(residual),
+                estimate_rms(residual), flux_addition/total_flux,
+                flux_lost/total_flux, psi1, n_pix, sharpness, psi2)
 
 
     def prune(self):
@@ -232,7 +233,8 @@ class ELModel():
         print('#'*90 + '\n')
         _xc, _yc, _c, _sig = self.get_params_mapped()
 
-        var,entr,rms,added_flux,psi1,n_pix,sharpness,psi2  = self.get_residual_stats()
+        out = self.get_residual_stats()
+        var,entr,rms,flux_addition,flux_lost,psi1,n_pix,sharpness,psi2 = out
         
         if solver_output:
             print('Solver Output:')
@@ -246,7 +248,8 @@ class ELModel():
             print('Residual RMS: {0}'.format(rms))
             print('Residual Variance: {0}'.format(var))
             #print('Residual Entropy: {0}'.format(entr))
-            print('Added Flux: {0}'.format(added_flux))
+            print('Flux Lost: {0}'.format(flux_lost))
+            print('Flux Addition: {0}'.format(flux_addition))
             print('Psi1(u-f): {0}'.format(psi1))
             print('#Exceeded Pixels: {0}'.format(n_pix))
             print('Sharpness: {0}'.format(sharpness))
