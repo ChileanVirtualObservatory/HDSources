@@ -218,6 +218,34 @@ class ELModel():
         return residual_stats
 
 
+    def get_approximation(self):
+        _xe = np.linspace(0., 1., self.dims[0]+2)[1:-1]
+        _ye = np.linspace(0., 1., self.dims[1]+2)[1:-1]
+        Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
+        xe = Xe.ravel(); ye = Ye.ravel()
+
+        xc, yc, c, sig = self.get_params_mapped()
+
+        u = u_eval(c, sig, xc, yc, xe, ye, support=self.support) + self.base_level
+        u = u.reshape(self.dims)
+
+        return u
+
+
+    def get_gradient(self):
+        _xe = np.linspace(0., 1., self.dims[0]+2)[1:-1]
+        _ye = np.linspace(0., 1., self.dims[1]+2)[1:-1]
+        Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
+        xe = Xe.ravel(); ye = Ye.ravel()
+
+        xc, yc, c, sig = self.get_params_mapped()
+
+        grad = grad_eval(c, sig, xc, yc, xe, ye, support=self.support) + self.base_level
+        grad = grad.reshape(self.dims)
+
+        return grad
+
+
     def prune(self):
         w = self.get_w()
         mask, _ = prune(w)
@@ -231,7 +259,7 @@ class ELModel():
 
     
     def summarize(self, solver_output=True, residual_stats=True, coverage_stats=True, homogeneity_stats=True,
-                  solution_plot=True, params_plot=True):
+                  solution_plot=True, params_plot=True, histograms_plot=True):
         print('\n \n' + '#'*90)    
         print('FINAL RESULTS:')
         print('#'*90 + '\n')
@@ -292,6 +320,20 @@ class ELModel():
         if params_plot:
             gp.params_plot(_c, _sig, _xc, _yc)
             gp.params_distribution_plot(_c, _sig)
+
+        if histograms_plot:
+            u = self.get_approximation()
+            grad = self.get_gradient()
+            term1 = u-self.data
+            term2 = grad**2
+            plt.figure(figsize=(16,8))
+            plt.subplot(1,2,1)
+            plt.hist(term1.ravel(), bins=10, facecolor='seagreen', edgecolor='black', lw=2)
+            plt.title('u-f')
+            plt.subplot(1,2,2)
+            plt.hist(term2.ravel(), bins=10, facecolor='peru', edgecolor='black', lw=2)
+            plt.title('gradient')
+            plt.show()
 
             
     def F(self, params):
