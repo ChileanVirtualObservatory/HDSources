@@ -26,7 +26,28 @@ def u_eval(c, sig, xc, yc, xe, ye, support=5):
             dist2 = (xe[i]-xc[j])**2 + (ye[i]-yc[j])**2
             if  dist2 > support**2 * sig[j]**2: continue
             ret[i] += c[j] * exp( -0.5 * dist2 / sig[j]**2 )
-    return ret 
+    return ret
+
+
+@numba.jit('float64[:] (float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64)', nopython=True)
+def grad_eval(c, sig, xc, yc, xe, ye, support=5):
+    m = len(xe)
+    n = len(xc)
+    ret = np.zeros((3,m))
+    for i in range(m):
+        for j in range(n):
+            dist2 = (xe[i]-xc[j])**2 + (ye[i]-yc[j])**2
+            if  dist2 > support**2 * sig[j]**2: continue
+            # common terms
+            coef = (-1./(sig[j]**2))
+            # u evaluation
+            aux = c[j] * exp( -dist2 / (2* sig[j]**2 ) )
+            ret[0,i] += aux
+            # ux evaluation
+            ret[1,i] += coef * aux * (xe[i]-xc[j])
+            # uy evaluation
+            ret[2,i] += coef * aux * (ye[i]-yc[j])
+    return np.sqrt(ret[1,:]**2 + ret[2,:]**2)
 
 
 @numba.jit('float64[:,:] (float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64)', nopython=True)
@@ -39,22 +60,22 @@ def u_eval_full(c, sig, xc, yc, xe, ye, support=5):
             dist2 = (xe[i]-xc[j])**2 + (ye[i]-yc[j])**2
             if  dist2 > support**2 * sig[j]**2: continue
             # common terms
-            aux1 = (-1./(sig[j]**2))
-            aux2 = aux1**2
+            coef = (-1./(sig[j]**2))
+            coef2 = coef**2
             # u evaluation
-            ret[0,i] += c[j] * exp( -dist2 / (2* sig[j]**2 ) )
+            aux = c[j] * exp( -dist2 / (2* sig[j]**2 ) )
+            ret[0,i] += aux
             # ux evaluation
-            ret[1,i] += aux1 * ret[0,i] * (xe[i]-xc[j])
+            ret[1,i] += coef * aux * (xe[i]-xc[j])
             # uy evaluation
-            ret[2,i] += aux1 * ret[0,i] * (ye[i]-yc[j])
+            ret[2,i] += coef * aux * (ye[i]-yc[j])
             # uxy evaluation
-            ret[3,i] += aux2 * ret[0,i] * (xe[i]-xc[j])*(ye[i]-yc[j])
-            # uxx evaluation (REVISAR ESTO)
-            ret[4,i] += aux2 * ret[0,i] * ((xe[i]-xc[j])**2 - sig[j]**2)
-            # uyy evaluation (REVISAR ESTO)
-            ret[5,i] += aux2 * ret[0,i] * ((ye[i]-yc[j])**2 - sig[j]**2)
+            ret[3,i] += coef2 * aux * (xe[i]-xc[j])*(ye[i]-yc[j])
+            # uxx evaluation
+            ret[4,i] += coef2 * aux * ((xe[i]-xc[j])**2 - sig[j]**2)
+            # uyy evaluation
+            ret[5,i] += coef2 * aux * ((ye[i]-yc[j])**2 - sig[j]**2)
     return ret
-
 
 
 def estimate_rms(data):
@@ -137,7 +158,6 @@ def snr_estimation(data, noise=None, points=1000, full_output=False):
     return snrlimit
 
 
-
 def build_dist_matrix(points, inf=False):
     """
     Builds a distance matrix from points array.
@@ -190,7 +210,6 @@ def load_data(fits_path):
         return x,y,z,data,dfunc
 
 
-
 def logistic(x):
     return 1. / (1. + np.exp(-x))
 
@@ -227,8 +246,9 @@ def prune(vec):
     mask = vec > 1e-3*min(mean,median)
     return mask, vec[mask]
 
+
 def gradient(img):
     gx, gy = np.gradient(img)
-    img_grad = gx**2 + gy**2
+    img_grad = np.sqrt(gx**2 + gy**2)
     return img_grad
 
