@@ -344,13 +344,11 @@ class ELModel():
         # parameters transform/mapping
         xc = self.xc0 + self.deltax * np.sin(theta_xc)
         yc = self.yc0 + self.deltay * np.sin(theta_yc)
-        # xc = self.xc0 + self.deltax * np.sin(np.pi* np.tanh(theta_xc))
-        # yc = self.yc0 + self.deltay * np.sin(np.pi* np.tanh(theta_yc))
         c = params[2*N:3*N]**2
         sig = self.maxsig * logistic(params[3*N:4*N]) + self.minsig
 
         # evaluation points
-        xe = self.xe; ye = self.ye
+        xe = np.hstack([self.xe, xc]); ye = np.hstack([self.ye, yc])
         xb = self.xb; yb = self.yb
         
         # computing u, ux, uy, ...
@@ -366,7 +364,8 @@ class ELModel():
             uyy = out[5,:]
         
         # computing the EL equation
-        f0 = self.f0; a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
+        f0 = np.hstack([ self.f0, self.dfunc(np.vstack([xc,yc]).T) ])
+        a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
 
         tmp1 = ne.evaluate('u-f0')
         tmp2 = self.d1psi1(tmp1, lamb1)
