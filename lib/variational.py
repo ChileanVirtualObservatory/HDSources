@@ -73,7 +73,7 @@ class ELModel():
         Nb = len(xb)
 
         
-        # saving important atributes
+        # important atributes
         self.data = data
         if base_level > 0.:
             self.mask = data > base_level
@@ -97,8 +97,8 @@ class ELModel():
         else:
             self.minsig = minsig
         if maxsig is None:
-            # reasoning: SOME REASONING HERE
-            self.maxsig = 30*self.minsig
+            K = np.sum(self.mask)//Nc
+            self.maxsig = K*self.minsig
         else:
             self.maxsig = maxsig
         # inverse transformation to (real) model parameters
@@ -121,9 +121,7 @@ class ELModel():
 
     def set_centers(self, theta_xc, theta_yc):
         self.xc = self.xc0 + self.deltax * np.sin(theta_xc)
-        self.yc = self.yc0 + self.deltay * np.sin(theta_yc)  
-        # self.xc = self.xc0 + self.deltax * np.sin(np.pi* np.tanh(theta_xc))
-        # self.yc = self.yc0 + self.deltay * np.sin(np.pi* np.tanh(theta_yc))  
+        self.yc = self.yc0 + self.deltay * np.sin(theta_yc)   
 
 
     def set_theta(self, theta_xc, theta_yc):
@@ -348,7 +346,8 @@ class ELModel():
         sig = self.maxsig * logistic(params[3*N:4*N]) + self.minsig
 
         # evaluation points
-        xe = np.hstack([self.xe, xc]); ye = np.hstack([self.ye, yc])
+        #xe = np.hstack([self.xe, xc]); ye = np.hstack([self.ye, yc])
+        xe = self.xe; ye = self.ye
         xb = self.xb; yb = self.yb
         
         # computing u, ux, uy, ...
@@ -364,7 +363,8 @@ class ELModel():
             uyy = out[5,:]
         
         # computing the EL equation
-        f0 = np.hstack([ self.f0, self.dfunc(np.vstack([xc,yc]).T) ])
+        #f0 = np.hstack([ self.f0, self.dfunc(np.vstack([xc,yc]).T) ])
+        f0 = self.f0
         a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
 
         tmp1 = ne.evaluate('u-f0')
