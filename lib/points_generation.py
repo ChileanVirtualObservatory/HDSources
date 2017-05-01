@@ -101,28 +101,6 @@ def qrandom_centers_generation(dfunc, n_points, base_level, ndim=2, get_size=50,
                 return np.asarray(points_positions)
 
 
-def _boundary_generation(n_boundary):
-    xb = []
-    yb = []
-
-    for val in np.linspace(0., 1., n_boundary+1)[0:-1]:
-        xb.append(val)
-        yb.append(0.)
-    for val in np.linspace(0., 1., n_boundary+1)[0:-1]:
-        xb.append(1.)
-        yb.append(val)
-    for val in np.linspace(0., 1., n_boundary+1)[::-1][:-1]:
-        xb.append(val)
-        yb.append(1.)
-    for val in np.linspace(0., 1., n_boundary+1)[::-1][:-1]:
-        xb.append(0.)
-        yb.append(val)
-    xb = np.asarray(xb)
-    yb = np.asarray(yb)
-    boundary_points = np.vstack([xb,yb]).T
-    return boundary_points
-
-
 def boundary_map(data, base_level):
     m,n = data.shape
     pixel_map = data > base_level
@@ -141,8 +119,6 @@ def boundary_map(data, base_level):
                     # in case pixel_map[i,j] has a unusable neighbor pixel
                     # then pixel_map[i,j] is a border pixel
                     if pixel_map[i+p,j+q]==False: border_map[i,j] = True
-
-
     return border_map
 
 
