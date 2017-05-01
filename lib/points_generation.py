@@ -82,7 +82,7 @@ def random_centers_generation(data, n_centers, base_level=None, power=2., umask=
     return points_positions[selected]
 
 
-def qrandom_centers_generation(dfunc, n_centers, base_level, ndim=2, get_size=50, umask=None):
+def qrandom_centers_generation(dfunc, n_points, base_level, ndim=2, get_size=50, umask=None):
     # generating the sequencer
     sequencer = ghalton.Halton(ndim)
 
@@ -97,7 +97,7 @@ def qrandom_centers_generation(dfunc, n_centers, base_level, ndim=2, get_size=50
             if values[i] > base_level:
                 points_positions.append(points[i])
                 n_selected += 1
-            if n_selected == n_centers:
+            if n_selected == n_points:
                 return np.asarray(points_positions)
 
 
