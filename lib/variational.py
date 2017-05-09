@@ -14,8 +14,7 @@ from hausdorff import hausdorff
 #################################################################
 # General Psi penalizing function (applicable in both cases)
 #################################################################
-
-def psi(x, lamb=1.):
+def psi1(x, lamb=1.):
     x = lamb*x
     ret = np.empty(x.shape)
     mask0 = x<=0.
@@ -28,7 +27,8 @@ def psi(x, lamb=1.):
     ret[mask01] = ne.evaluate('10*x**3 - 15*x**4 + 6*x**5')
     return ret
 
-def d1psi(x, lamb=1.):
+
+def d1psi1(x, lamb=1.):
     x = lamb*x
     ret = np.empty(x.shape)
     mask0 = x<=0.
@@ -41,7 +41,8 @@ def d1psi(x, lamb=1.):
     ret[mask01] = ne.evaluate('30*x**2 - 60*x**3 + 30*x**4')
     return lamb*ret
 
-def d2psi(x, lamb=1.):
+
+def d2psi1(x, lamb=1.):
     x = lamb*x
     ret = np.empty(x.shape)
     mask0 = x<=0.
@@ -55,12 +56,24 @@ def d2psi(x, lamb=1.):
     return (lamb**2)*ret
 
 
+def psi2(x, lamb=1.):
+    return lamb**2 * np.log(1 + x/lamb**2)
+
+
+def d1psi2(x, lamb=1.):
+    return 1./(1.+x/lamb**2)
+
+
+def d2psi2(x, lamb=1.):
+    return -lamb**2/(lamb**2+x)**2
+
+
 #################################################################
 # Euler-Lagrange class definition
 #################################################################
 class ELModel():
-    def __init__(self, data, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=None, 
-                d1psi2=None, d2psi2=None, a=0., b=0., lamb1=1., lamb2=1., base_level=0.,
+    def __init__(self, data, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=d1psi1, 
+                d1psi2=d1psi2, d2psi2=d2psi2, a=0., b=0., lamb1=1., lamb2=1., base_level=0.,
                 minsig=None, maxsig=None, pix_freedom=1., support=5.):
 
         f0 = dfunc( np.vstack([xe,ye]).T )
@@ -200,13 +213,13 @@ class ELModel():
         flux_mask = residual<0.
         flux_addition = -1. * np.sum(residual[flux_mask])
         flux_lost = np.sum(residual[~flux_mask])
-        psi1_int = np.sum(psi(-1*residual))
+        psi1_int = np.sum(psi1(-1*residual))
         npix = np.sum(flux_mask)
 
         # second term of Lagrangian stats
         img_grad = gradient(u)
         sharpness = np.sum(img_grad)
-        psi2_int = np.sum(psi(img_grad))
+        psi2_int = np.sum(psi2(img_grad))
 
         residual_stats = estimate_variance(residual), estimate_entropy(residual), \
                          estimate_rms(residual), flux_addition/total_flux, \
