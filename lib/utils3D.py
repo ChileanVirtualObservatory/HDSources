@@ -173,3 +173,40 @@ def load_data(fits_path):
         z = np.linspace(0., 1., data.shape[2]+2, endpoint=True)[1:-1]
         dfunc = RegularGridInterpolator((x, y, z), data, method='linear', bounds_error=False, fill_value=0.)
         return x,y,z,data,dfunc
+
+
+def logistic(x):
+    return 1. / (1. + np.exp(-x))
+
+
+def logit(x):
+    mask0 = x==0.
+    mask1 = x==1.
+    mask01 = np.logical_and(~mask0, ~mask1)
+    res = np.empty(x.shape[0])
+    res[mask0] = -np.inf
+    res[mask1] = np.inf
+    res[mask01] = np.log(x[mask01] / (1-x[mask01]))
+    return res
+
+
+def mean_min_dist(points1, points2):
+    x1 = points1[:,0]; y1 = points1[:,1]
+    x2 = points2[:,0]; y2 = points2[:,1]
+    M = points1.shape[0]
+    N = points2.shape[0]
+    Dx = np.empty((M,N))
+    Dy = np.empty((M,N))
+    for k in range(M):
+        Dx[k] = x1[k] - x2
+        Dy[k] = y1[k] - y2
+    D = np.sqrt(Dx**2 + Dy**2)
+    return np.mean( np.min(D, axis=1) )
+
+
+def prune(vec):
+    mean = np.mean(vec)
+    median = np.median(vec)
+    #all values greater than 1e-3 the mean/median
+    mask = vec > 1e-3*min(mean,median)
+    return mask, vec[mask]

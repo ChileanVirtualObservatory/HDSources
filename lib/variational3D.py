@@ -187,6 +187,18 @@ class ELModel():
         c = self.c**2
         sig = self.maxsig * logistic(self.sig) + self.minsig
         return xc, yc, zc, c, sig
+
+
+    def get_w(self):
+        """
+        Get the mapping from the 'c' coefficients in the linear
+        combination of Gausssian functions, to the 'w' in the
+        linear combination of Normal distributions. 
+        """
+        xc, yc, zc, c, sig = self.get_params_mapped()
+        d = len(self.dims)
+        w = c * (2*np.pi*sig**2)**(d/2.)
+        return w
     
 
     def get_residual_stats(self):
@@ -209,6 +221,20 @@ class ELModel():
         return (estimate_variance(residual), 
                 estimate_entropy(residual),
                 estimate_rms(residual))
+
+
+    def prune(self):
+        w = self.get_w()
+        mask, _ = prune(w)
+        #update all the arrays
+        self.xc = self.xc[mask]; self.xc0 = self.xc0[mask]
+        self.yc = self.yc[mask]; self.yc0 = self.yc0[mask]
+        self.zc = self.zc[mask]; self.zc0 = self.zc0[mask]
+        self.theta_xc = self.theta_xc[mask]
+        self.theta_yc = self.theta_yc[mask]
+        self.theta_zc = self.theta_zc[mask]
+        self.c = self.c[mask]
+        self.sig = self.sig[mask]
 
     
     def summarize(self, solver_output=True, residual_stats=True, solution_plot=True, params_plot=True):
