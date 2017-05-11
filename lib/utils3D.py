@@ -6,14 +6,7 @@ import scipy as sp
 import numexpr as ne
 from math import sqrt, exp
 from scipy.interpolate import RegularGridInterpolator
-
-
-# ACALIB helper functions
-# sys.path.append('../../ACALIB/')
-# import acalib
-# from acalib import load_fits, standarize
-
-
+from astropy.io import fits
 
 
 @numba.jit('float64[:] (float64[:], float64[:], float64[:], float64[:], float64[:], \
@@ -148,19 +141,35 @@ def logit(x):
 
 
 
-def load_data(fit_path):
-    container = load_fits(fit_path)
-    data = standarize(container.primary)[0]
-    data = data.data
+def load_data(fits_path):
+    hdulist = fits.open(fits_path)
+    data = hdulist[0].data
+    # droping out the stokes dimension
+    data = np.ascontiguousarray(data[0])
+    
+    # in case NaN values exist on cube
+    mask = np.isnan(data)
+    if np.any(mask): data = ma.masked_array(data, mask=mask)
 
-    # map to [0,1] range
+    # map to 0-1 intensity range
     data -= data.min()
     data /= data.max()
-
-    # generating the data function
-    x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
-    y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
-    z = np.linspace(0., 1., data.shape[2]+2, endpoint=True)[1:-1]
-    dfunc = RegularGridInterpolator((x, y, z), data, method='linear', bounds_error=False, fill_value=0.)
     
-    return x, y, z, data, dfunc
+    if data.shape[0]==1:
+        data = np.ascontiguousarray(data[0])
+        if np.any(mask): 
+            mask = np.ascontiguousarray(mask[0])
+            data = ma.masked_array(data, mask=mask)
+        # generating the data function
+        x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
+        y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
+        dfunc = RegularGridInterpolator((x,y), data, method='linear', bounds_error=False, fill_value=0.)
+        return x,y,data,dfunc
+
+    else:
+        # generating the data function
+        x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
+        y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
+        z = np.linspace(0., 1., data.shape[2]+2, endpoint=True)[1:-1]
+        dfunc = RegularGridInterpolator((x, y, z), data, method='linear', bounds_error=False, fill_value=0.)
+        return x,y,z,data,dfunc
