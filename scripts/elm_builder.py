@@ -41,7 +41,12 @@ if __name__ == '__main__':
 	Nc = args.n_center
 	Ne = 5*Nc-4*Nb
 
-	if args.points_method == 'random':
+	if args.points_method == 'standard':
+		points = qrandom_centers_generation(dfunc, Ne, base_level, ndim=3)
+		center_points = points[0:Nc]
+		collocation_points = points[0:Ne]
+		boundary_points = boundary_generation(Nb)
+	elif args.points_method == 'random':
 		center_points = random_centers_generation(data, Nc, base_level=base_level, power=3.)
 		collocation_points = qrandom_centers_generation(dfunc, Ne, base_level, ndim=3)
 		boundary_points = boundary_generation(Nb)
@@ -75,8 +80,8 @@ if __name__ == '__main__':
 
 
 	# ELModel instantiation
-	elm = ELModel(data, dfunc, data.shape, xe, ye, ze, xc, yc, zc, xb, yb, zb, c0, sig0, a=1., lamb1=1., d1psi1=d1psi, 
-	               d1psi2=d1psi, d2psi2=d2psi, base_level=base_level, pix_freedom=1.)
+	elm = ELModel(data, dfunc, data.shape, xe, ye, ze, xc, yc, zc, xb, yb, zb, c0, sig0, a=1., lamb1=1,
+                      base_level=base_level, pix_freedom=1.)
 
 	# solving it
         nfev =  100 * ( len(elm.get_params())+1 ) 
