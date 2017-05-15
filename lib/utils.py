@@ -179,10 +179,16 @@ def build_dist_matrix(points, inf=False):
 def load_data(fits_path):
     hdulist = fits.open(fits_path)
     data = hdulist[0].data
-    # droping out the stokes dimension
-    data = np.ascontiguousarray(data[0])
+
+    if data.ndim>3:
+        # droping out the stokes dimension
+        data = np.ascontiguousarray(data[0])
+
+        if data.shape[0]==1:
+            # in case data is an image and not a cube
+            data = np.ascontiguousarray(data[0])
     
-    # in case NaN values exist on cube
+    # in case NaN values exist on data
     mask = np.isnan(data)
     if np.any(mask): data = ma.masked_array(data, mask=mask)
 
@@ -190,18 +196,14 @@ def load_data(fits_path):
     data -= data.min()
     data /= data.max()
     
-    if data.shape[0]==1:
-        data = np.ascontiguousarray(data[0])
-        if np.any(mask): 
-            mask = np.ascontiguousarray(mask[0])
-            data = ma.masked_array(data, mask=mask)
+    if data.ndim==2:
         # generating the data function
         x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
         y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
         dfunc = RegularGridInterpolator((x,y), data, method='linear', bounds_error=False, fill_value=0.)
         return x,y,data,dfunc
 
-    else:
+    elif data.ndim==3:
         # generating the data function
         x = np.linspace(0., 1., data.shape[0]+2, endpoint=True)[1:-1]
         y = np.linspace(0., 1., data.shape[1]+2, endpoint=True)[1:-1]
