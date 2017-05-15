@@ -1,8 +1,8 @@
-import cPickle as pickle
+import pickle
 import argparse
 import numpy as np
-# VarClump functions
 import sys
+# VarClump functions
 sys.path.append('/user/m/marvill/VarClump/lib/')
 from utils3D import *
 #from graph import *
@@ -10,26 +10,26 @@ from points_generation3D import *
 from initial_guess3D import *
 from variational3D import *
 
-
+data_path = '/user/m/marvill/VarClump/data/cubes/'
 
 if __name__ == '__main__':
     # input parameters parsing
     parser = argparse.ArgumentParser(description='ELM instances builder script')
-    #parser.add_argument('fit_path', help='Path to FITS file', default=None)
+    #parser.add_argument('fits_path', help='Path to FITS file', default=None)
     parser.add_argument('n_center', help='Number of center points to use', type=int)
     parser.add_argument('points_method', help='Points generation method')
     parser.add_argument('solver_method', help='Method used in elm_solver() function')
     args = parser.parse_args()
 
     # LOADING DATA
-    #fit_path = '../../bindata/fits/cubes/Antennae_North.CO3_2Line.Clean.pcal1.image.fits'
-    #fit_path = '../../bindata/fits/cubes/Antennae_South.CO3_2Line.Clean.pcal1.image.fits'
-    #fit_path = '../../bindata/fits/cubes/CenA.CO2_1Line.Clean.image.fits'
-    #fit_path = '../../bindata/fits/cubes/M100line.image.fits'
-    fit_path = '/user/m/marvill/acalib/bindata/fits/cubes/Orion.methanol.cbc.contsub.image.fits'
-    #fit_path = '../../bindata/fits/cubes/ALMA01000740.fits'
+    #fits_path = '../../bindata/fits/cubes/Antennae_North.CO3_2Line.Clean.pcal1.image.fits'
+    #fits_path = '../../bindata/fits/cubes/Antennae_South.CO3_2Line.Clean.pcal1.image.fits'
+    #fits_path = '../../bindata/fits/cubes/CenA.CO2_1Line.Clean.image.fits'
+    #fits_path = '../../bindata/fits/cubes/M100line.image.fits'
+    fits_path = data_path+'Orion.methanol.cbc.contsub.image.fits'
+    #fits_path = '../../bindata/fits/cubes/ALMA01000740.fits'
 
-    x, y, z, data, dfunc = load_data(fit_path)
+    x, y, z, data, dfunc = load_data(fits_path)
 
 
     # base level over which usable pixels will be taken
