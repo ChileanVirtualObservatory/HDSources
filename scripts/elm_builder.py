@@ -1,8 +1,8 @@
-import cPickle as pickle
+import pickle
 import argparse
 import numpy as np
-# VarClump functions
 import sys
+# VarClump functions
 sys.path.append('/user/m/marvill/VarClump/lib/')
 from utils3D import *
 #from graph import *
