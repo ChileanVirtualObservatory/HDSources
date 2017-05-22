@@ -43,6 +43,29 @@ def remove(l, indexes):
     """
     return [val for i,val in enumerate(l) if i not in indexes]
 
+
+def ncomp_finder(kl_hist, w_size=10):
+    """
+    Heuristic: If the actual diff is 1 order of magnitude
+    greater than the mean of the 10 last diff values, we 
+    consider this points as the number of components estimate
+    """
+    diff = np.diff(kl_hist)
+    diff -= diff.min()
+    diff /= diff.max()
+    reached_flag = False
+    
+    for i in range(w_size, len(diff)):
+        # If actual diff is 1 order of magnitude
+        if diff[i] > 10*np.mean(diff[i-w_size:i]):
+            reached_flag = True
+            break
+    if not reached_flag:
+        # in case of no high increase is detected
+        i += 1
+    return len(kl_hist)-i
+
+
 #################################################################
 # MOMENT PRESERVING GAUSSIAN
 #################################################################
