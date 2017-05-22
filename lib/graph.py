@@ -229,7 +229,7 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     plt.show()
 
     
-def components_plot(elm, components_dict, n_comp, n_levels=5, show_isd=False):
+def components_plot(elm, components_dict, n_comp, n_levels=1, show_isd=False):
     # get all the (mapped) parameters
     xc, yc, c, sig = elm.get_params_mapped()
     
@@ -246,7 +246,10 @@ def components_plot(elm, components_dict, n_comp, n_levels=5, show_isd=False):
     ax = plt.subplot(1,1,1)
     ax.imshow(elm.data, cmap=plt.cm.afmhot)
     color = plt.cm.rainbow(np.linspace(0., 1., n_comp))
-    levels = np.linspace(1.05*elm.base_level, 0.95, n_levels)
+    if n_levels==1:
+        levels = [1.05*elm.base_level]
+    else:
+        levels = np.linspace(1.05*elm.base_level, 0.95, n_levels)
 
     if show_isd:
         # putting parameters in the correct format
@@ -255,7 +258,6 @@ def components_plot(elm, components_dict, n_comp, n_levels=5, show_isd=False):
         Sig = np.zeros((len(w),2,2))
         Sig[:,0,0] = sig; Sig[:,1,1] = sig
 
-    
     for i,indexes in enumerate(components_dict[n_comp]):
         _xc = xc[indexes]
         _yc = yc[indexes]
