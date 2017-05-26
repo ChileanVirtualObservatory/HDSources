@@ -59,14 +59,14 @@ def estimate_initial_guess(center_points, dfunc, R=0.05, minsig=None, maxsig=Non
             some explanation here
             """
             if num_neigh[i]==0:
-                c_arr[i] = dfunc(center_points[i])[0]
+                c_arr[i] = 0.5*dfunc(center_points[i])[0]
                 sig_arr[i] = minsig
             else:
-                c_arr[i] = dfunc(center_points[i])[0]/(num_neigh[i]+1)
+                c_arr[i] = 0.5*dfunc(center_points[i])[0]/(num_neigh[i]+1)
                 if min_dist[i] < minsig:
                     sig_arr[i] = minsig
                 elif min_dist[i] > maxsig:
-                    sig_arr[i] = maxsig
+                    sig_arr[i] = 0.99*maxsig
                 else:
                     sig_arr[i] = min_dist[i]
     return (c_arr,sig_arr)
