@@ -116,7 +116,7 @@ class ELModel():
             self.maxsig = maxsig
         # inverse transformation to (real) model parameters
         self.c = np.sqrt(c0)
-        self.sig = logit((sig0 - self.minsig) / self.maxsig)
+        self.sig = inv_sig_mapping(sig0, minsig, maxsig)
         self.d1psi1 = d1psi1
         self.d1psi2 = d1psi2
         self.d2psi2 = d2psi2
@@ -176,7 +176,7 @@ class ELModel():
         xc = self.xc
         yc = self.yc
         c = self.c**2
-        sig = self.maxsig * logistic(self.sig) + self.minsig
+        sig = sig_mapping(self.sig, self.minsig, self.maxsig)
         return xc, yc, c, sig
 
 
@@ -334,16 +334,10 @@ class ELModel():
 
         if histograms_plot:
             u = self.get_approximation()
-            grad = self.get_gradient()
             term1 = u-self.data
-            term2 = grad**2
-            plt.figure(figsize=(16,8))
-            plt.subplot(1,2,1)
+            plt.figure(figsize=(8,8))
             plt.hist(term1.ravel(), bins=10, facecolor='seagreen', edgecolor='black', lw=2)
             plt.title('u-f')
-            plt.subplot(1,2,2)
-            plt.hist(term2.ravel(), bins=10, facecolor='peru', edgecolor='black', lw=2)
-            plt.title('gradient')
             plt.show()
 
             
@@ -356,7 +350,20 @@ class ELModel():
         xc = self.xc0 + self.deltax * np.sin(theta_xc)
         yc = self.yc0 + self.deltay * np.sin(theta_yc)
         c = params[2*N:3*N]**2
-        sig = self.maxsig * logistic(params[3*N:4*N]) + self.minsig
+        sig = sig_mapping(params[3*N:4*N], self.minsig, self.maxsig)
+
+        # if np.any(np.isnan(xc)):
+        #     print("xc")
+        # if np.any(np.isnan(yc)):
+        #     print("yc")
+        # if np.any(np.isnan(c)):
+        #     print("c")
+        # if np.any(np.isnan(sig)):
+        #     print("sig")
+        # if np.any(np.isnan(params)):
+        #     return -1
+
+
 
         # evaluation points
         #xe = np.hstack([self.xe, xc]); ye = np.hstack([self.ye, yc])
@@ -529,6 +536,9 @@ def elm_solver(elm, method='standard', max_nfev=None, n_iter=100, verbose=True, 
         elm.set_centers(opt_theta_xc, opt_theta_yc)
         elm.set_c(opt_c)
         elm.set_sig(opt_sig)
+
+        # prune of gaussian in elm
+        elm.prune()
     
     elif method=='iterative':
         for it in range(n_iter):
