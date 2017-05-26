@@ -74,7 +74,8 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
     f = dfunc(points).reshape(dims)
 
     # residual
-    res = f-u+base_level
+    #res = f-u+base_level
+    res = f-u
 
     # unusable pixels are fixed to 0
     if mask is not None: 
