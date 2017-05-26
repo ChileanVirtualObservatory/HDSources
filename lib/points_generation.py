@@ -170,7 +170,7 @@ def boundary_points_generation(data, base_level, n_points, method='sampling'):
             if index0==0 or index0==m-1 or index1==0 or index1==n-1: continue
             selected.append(sel)
             # update the pixel probabilities array
-            prob[index0-1:index0+2, index1-1:index1+2] *= 0.
+            prob[index0-3:index0+4, index1-3:index1+4] *= 0.
             prob /= prob.sum()
         return points_positions[selected]
     
