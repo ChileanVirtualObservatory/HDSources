@@ -1,5 +1,6 @@
 import sys
 import numba
+import scipy
 import numpy as np
 import numpy.ma as ma
 import scipy as sp
@@ -7,13 +8,6 @@ import numexpr as ne
 from math import sqrt, exp
 from scipy.interpolate import RegularGridInterpolator
 from astropy.io import fits
-
-# ACALIB helper functions
-#sys.path.append('../../ACALIB/')
-#import acalib
-#from acalib import load_fits, standarize
-
-
 
 
 @numba.jit('float64[:] (float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64)', nopython=True)
@@ -212,6 +206,7 @@ def load_data(fits_path):
         return x,y,z,data,dfunc
 
 
+# logistic and logit functions used for sig mapping
 def logistic(x):
     return 1. / (1. + np.exp(-x))
 
@@ -225,6 +220,52 @@ def logit(x):
     res[mask1] = np.inf
     res[mask01] = np.log(x[mask01] / (1-x[mask01]))
     return res
+
+
+# improved versions for sig mapping
+# def sig_mapping(x, minsig, maxsig):
+#     # polynomial coefficients
+#     a = minsig
+#     b = 3*(maxsig-minsig)
+#     c = -2*(maxsig-minsig)
+    
+#     ret = np.empty(x.shape)
+#     mask0 = np.logical_or(x<=-1, x>=1)
+#     mask1 = np.logical_and(x>-1, x<0)
+#     mask2 = np.logical_and(x>=0, x<1)
+#     ret[mask0] = maxsig
+#     # evaluation on (-1,0) interval
+#     _x = x[mask1]
+#     ret[mask1] = a + b*_x**2 - c*_x**3
+#     # evaluation on (0,1) interval
+#     _x = x[mask2]
+#     ret[mask2] = a + b*_x**2 + c*_x**3
+#     return ret
+
+
+# def inv_sig_mapping(y, minsig, maxsig):
+#     # polynomial coefficients
+#     a = minsig
+#     b = 3*(maxsig-minsig)
+#     c = -2*(maxsig-minsig)
+#     x0 = 0.5*(minsig+maxsig)
+    
+#     n = len(y)
+#     ret = np.empty(n)
+#     for i in range(n):
+#         f = lambda x : a + b*x**2 + c*x**3 - y[i]
+#         ret[i] = scipy.optimize.newton(f, x0, maxiter=100000)
+#     return ret
+
+# improved++ versions for sig mapping
+def sig_mapping(sig, minsig=0., maxsig=1.):
+    return np.sqrt( (maxsig**2-minsig**2)*np.tanh(sig**2) + minsig**2 )
+
+def _inv_tanh(x):
+    return 0.5*np.log((1+x)/(1-x))
+
+def inv_sig_mapping(sig, minsig=0., maxsig=1.):
+    return np.sqrt( _inv_tanh((sig**2-minsig**2)/(maxsig**2-minsig**2)) )
 
 
 def mean_min_dist(points1, points2):
