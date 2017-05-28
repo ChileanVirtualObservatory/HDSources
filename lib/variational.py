@@ -334,7 +334,7 @@ class ELModel():
 
         if histograms_plot:
             u = self.get_approximation()
-            term1 = u-self.data
+            term1 = u[self.mask]-self.data[self.mask]
             plt.figure(figsize=(8,8))
             plt.hist(term1.ravel(), bins=10, facecolor='seagreen', edgecolor='black', lw=2)
             plt.title('u-f')
