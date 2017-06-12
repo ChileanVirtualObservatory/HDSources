@@ -366,8 +366,8 @@ class ELModel():
 
 
         # evaluation points
-        xe = np.hstack([self.xe, xc]); ye = np.hstack([self.ye, yc])
-        #xe = self.xe; ye = self.ye
+        #xe = np.hstack([self.xe, xc]); ye = np.hstack([self.ye, yc])
+        xe = self.xe; ye = self.ye
         xb = self.xb; yb = self.yb
         
         # computing u, ux, uy, ...
@@ -383,8 +383,8 @@ class ELModel():
             uyy = out[5,:]
         
         # computing the EL equation
-        f0 = np.hstack([ self.f0, self.dfunc(np.vstack([xc,yc]).T) ])
-        #f0 = self.f0
+        #f0 = np.hstack([ self.f0, self.dfunc(np.vstack([xc,yc]).T) ])
+        f0 = self.f0
         a = self.a; b = self.b; lamb1 = self.lamb1; lamb2 = self.lamb2
 
         tmp1 = ne.evaluate('u-f0')
