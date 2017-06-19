@@ -222,47 +222,13 @@ def logit(x):
     return res
 
 
-# improved versions for sig mapping
-# def sig_mapping(x, minsig, maxsig):
-#     # polynomial coefficients
-#     a = minsig
-#     b = 3*(maxsig-minsig)
-#     c = -2*(maxsig-minsig)
-    
-#     ret = np.empty(x.shape)
-#     mask0 = np.logical_or(x<=-1, x>=1)
-#     mask1 = np.logical_and(x>-1, x<0)
-#     mask2 = np.logical_and(x>=0, x<1)
-#     ret[mask0] = maxsig
-#     # evaluation on (-1,0) interval
-#     _x = x[mask1]
-#     ret[mask1] = a + b*_x**2 - c*_x**3
-#     # evaluation on (0,1) interval
-#     _x = x[mask2]
-#     ret[mask2] = a + b*_x**2 + c*_x**3
-#     return ret
-
-
-# def inv_sig_mapping(y, minsig, maxsig):
-#     # polynomial coefficients
-#     a = minsig
-#     b = 3*(maxsig-minsig)
-#     c = -2*(maxsig-minsig)
-#     x0 = 0.5*(minsig+maxsig)
-    
-#     n = len(y)
-#     ret = np.empty(n)
-#     for i in range(n):
-#         f = lambda x : a + b*x**2 + c*x**3 - y[i]
-#         ret[i] = scipy.optimize.newton(f, x0, maxiter=100000)
-#     return ret
-
-# improved++ versions for sig mapping
 def sig_mapping(sig, minsig=0., maxsig=1.):
     return np.sqrt( (maxsig**2-minsig**2)*np.tanh(sig**2) + minsig**2 )
 
+
 def _inv_tanh(x):
     return 0.5*np.log((1+x)/(1-x))
+
 
 def inv_sig_mapping(sig, minsig=0., maxsig=1.):
     return np.sqrt( _inv_tanh((sig**2-minsig**2)/(maxsig**2-minsig**2)) )
@@ -295,3 +261,21 @@ def gradient(img):
     img_grad = np.sqrt(gx**2 + gy**2)
     return img_grad
 
+
+def stat_extractor(r_stats, stat):
+    """
+    Function to extract a single residual stat from 
+    the r_stats structure (list of tuples)
+    """
+    if stat=='variance':
+        return np.array([var for (var,_,_,_,_,_,_,_,_) in r_stats])
+    elif stat=='entropy':
+        return np.array([entr for (_,entr,_,_,_,_,_,_,_) in r_stats])
+    elif stat=='rms':
+        return np.array([rms for (_,_,rms,_,_,_,_,_,_) in r_stats])
+    elif stat=='flux_addition':
+        return np.array([flux for (_,_,_,flux,_,_,_,_,_) in r_stats])
+    elif stat=='flux_lost':
+        return np.array([flux for (_,_,_,_,flux,_,_,_,_) in r_stats])
+    elif stat=='sharpness':
+        return np.array([sharp for (_,_,_,_,_,_,_,sharp,_) in r_stats])
