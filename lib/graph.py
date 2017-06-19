@@ -192,8 +192,10 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     y_scale = data.shape[1]-1
     if (center_points is not None) and (collocation_points is None):
         plt.figure(figsize=(10,10))
-        plt.imshow(data, cmap=plt.cm.afmhot)
-        plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='green', s=12, label='center')
+        plt.imshow(data, cmap=plt.cm.gray)
+        plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='magenta', s=12, label='center')
+        plt.grid()
+        plt.tick_params(axis='both', which='major', labelsize=20)
         if title is not None: plt.title(title) 
         else: plt.title('Center points')
         #plt.axis('off')
@@ -230,7 +232,7 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     plt.show()
 
     
-def components_plot(elm, components_dict, n_comp, n_levels=1, show_isd=False):
+def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, show_isd=False, save_path=None):
     # get all the (mapped) parameters
     xc, yc, c, sig = elm.get_params_mapped()
     
@@ -242,11 +244,19 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_isd=False):
     xe = Xe.ravel(); ye = Ye.ravel()  
     
     plt.figure(figsize=(10,10))
-    plt.title('{0} components solution'.format(n_comp))
-    #plt.axis('off')
+    plt.tick_params(axis='both', which='major', labelsize=20)
+    plt.grid()
+    if show_title: plt.title('{0} components solution'.format(n_comp))
+
     ax = plt.subplot(1,1,1)
-    ax.imshow(elm.data, cmap=plt.cm.afmhot)
-    color = plt.cm.rainbow(np.linspace(0., 1., n_comp))
+    ax.imshow(elm.data, cmap=plt.cm.gray)
+
+    # generating the color of sources
+    maxclump = 100
+    color = plt.cm.rainbow(np.linspace(0., 1., maxclump))
+    np.random.seed(0); np.random.shuffle(color)
+    color = color[0:n_comp]
+
     if n_levels==1:
         levels = [1.05*elm.base_level]
     else:
@@ -274,9 +284,9 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_isd=False):
         else:
             ax.contour(_u, levels=levels, colors=[color[i]])
     if show_isd: plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
+    if save_path is not None:
+        plt.savefig(save_path, format='eps', dpi=150)
     plt.show()
-
-
     
 
 ########################################################
@@ -456,52 +466,108 @@ def components_plot3D_(elm, components_dict, n_comp):
     return clump_map
 
 
-def stats_plot(x_var, r_stats, x_label='', loglog=False, n=5, slopes=None):
+def _stat_plot(x_var, r_stats, stat, x_label='', loglog=False, n=5, slope=None, name=None):
+    """
+    Function to plot a single residual plot for a single image
+    """
+    stats = {'rms':0, 'var':1, 'fadd':2, 'flost':3, 'psiint':4, 'epix':5, 'sharp':6}
+
     y_label = ['RMS', 'Variance', 'Flux addition', 'Flux lost', \
-                'Psi1 int', 'Excedeed pixels', 'Sharpness', 'Psi2 int']
-    
+               'Psi1 int', 'Excedeed pixels', 'Sharpness', 'Psi2 int']
     # unpacking the values
     r_stats_list = []
+    r_stats_list.append( np.array([rms for (_,_,rms,_,_,_,_,_,_) in r_stats]) )
     r_stats_list.append( np.array([var for (var,_,_,_,_,_,_,_,_) in r_stats]) )
     #r_stats_list.append( np.array([entr for (_,entr,_,_,_,_,_,_,_) in r_stats]) )
-    r_stats_list.append( np.array([rms for (_,_,rms,_,_,_,_,_,_) in r_stats]) )
     r_stats_list.append( np.array([flux for (_,_,_,flux,_,_,_,_,_) in r_stats]) )
     r_stats_list.append( np.array([flux for (_,_,_,_,flux,_,_,_,_) in r_stats]) )
     r_stats_list.append( np.array([psi1 for (_,_,_,_,_,psi1,_,_,_) in r_stats]) )
     r_stats_list.append( np.array([npix for (_,_,_,_,_,_,npix,_,_) in r_stats]) )
     r_stats_list.append( np.array([sharp for (_,_,_,_,_,_,_,sharp,_) in r_stats]) )
     r_stats_list.append( np.array([psi2 for (_,_,_,_,_,_,_,_,psi2) in r_stats]) )
-    
-    ## compute slope
-    #if loglog and (slopes is not None) :
-    #    slopes = []
-    #    for r_stat in r_stats_list:
-    #        s = 0.
-    #        for i in range(n): s += r_stat[i+1]-r_stat[i]
-    #        slopes.append(s)
-    
-    # plots
+
     colors = plt.cm.rainbow(np.linspace(0., 1., len(r_stats_list)))
-    for i,r_stat in enumerate(r_stats_list):
-        fig = plt.figure(figsize=(17,6))
-        fig.subplots_adjust(wspace=0.25)
-        plt.subplot(1,2,1)
-        plt.plot(x_var, r_stat, color=colors[i], marker='o')
+
+    i = stats[stat]
+    r_stat = r_stats_list[i]
+    fig = plt.figure(figsize=(17,6))
+    fig.subplots_adjust(wspace=0.25)
+    plt.subplot(1,2,1)
+    plt.plot(x_var, r_stat, color=colors[i], marker='o')
+    plt.grid()
+    plt.xlabel(x_label, fontsize=20)
+    plt.ylabel(y_label[i], fontsize=20)
+    plt.subplot(1,2,2)
+    if loglog:
+        plt.loglog(x_var, r_stat, color=colors[i], marker='o')
         plt.grid()
         plt.xlabel(x_label, fontsize=20)
         plt.ylabel(y_label[i], fontsize=20)
-        plt.subplot(1,2,2)
-        if loglog:
-            plt.loglog(x_var, r_stat, color=colors[i], marker='o')
-            plt.grid()
-            plt.xlabel(x_label, fontsize=20)
-            plt.ylabel(y_label[i], fontsize=20)
-            line = (r_stat[1]/x_var[1]**(slopes[i])) * x_var**(slopes[i])
-            plt.plot(x_var, line, color='k', label='slope={0}'.format(slopes[i]))
-            plt.legend(bbox_to_anchor=(1.3, 1.0))
-        else:
-            plt.semilogy(x_var, r_stat, color=colors[i], marker='o')
-            plt.grid()
-            plt.xlabel(x_label, fontsize=20)
-            plt.ylabel(y_label[i], fontsize=20)
-        plt.show()
+        line = (r_stat[1]/x_var[1]**(slope)) * x_var**(slope)
+        plt.plot(x_var, line, color='k', label='slope={0}'.format(slope))
+        plt.legend(bbox_to_anchor=(1.3, 1.0))
+    else:
+        plt.semilogy(x_var, r_stat, color=colors[i], marker='o')
+        plt.grid()
+        plt.xlabel(x_label, fontsize=20)
+        plt.ylabel(y_label[i], fontsize=20)
+
+    if name is not None: plt.savefig(name, format='eps', dpi=1000)
+    plt.show()
+
+
+def stat_plots(x_var, y_list, labels, xlabel=None, ylabel=None, save_name=None, legend=False):
+    """
+    Function to plot a single residual stat for multiple images
+    """
+    plt.figure(figsize=(7,4))
+    colors = plt.cm.rainbow(np.linspace(0., 1., len(y_list)))
+    for i,y_var in enumerate(y_list):
+        plt.plot(x_var, y_var, c=colors[i], marker='o', label=labels[i])
+    if xlabel is not None: plt.xlabel(xlabel, fontsize=30)
+    if ylabel is not None: plt.ylabel(ylabel, fontsize=25)
+    plt.grid()
+    plt.tick_params(axis='both', which='major', labelsize=20)
+    plt.tight_layout()
+    if legend: plt.legend(loc='best', prop={'size':20})
+    if save_name is not None:
+        plt.savefig(save_name, format='eps', dpi=1000)
+    plt.show()
+
+
+def all_stats_plot(x_var, r_stats, x_label='', loglog=False, n=5, slope=None, name=None):
+    """
+    Function to plot all the residual stats for a single image
+    """
+    y_label = ['RMS', 'Flux addition', 'Flux lost', 'Sharpness']
+    # unpacking the values
+    r_stats_list = []
+    r_stats_list.append( np.array([rms for (_,_,rms,_,_,_,_,_,_) in r_stats]) )
+    #r_stats_list.append( np.array([var for (var,_,_,_,_,_,_,_,_) in r_stats]) )
+    #r_stats_list.append( np.array([entr for (_,entr,_,_,_,_,_,_,_) in r_stats]) )
+    r_stats_list.append( np.array([flux for (_,_,_,flux,_,_,_,_,_) in r_stats]) )
+    r_stats_list.append( np.array([flux for (_,_,_,_,flux,_,_,_,_) in r_stats]) )
+    #r_stats_list.append( np.array([psi1 for (_,_,_,_,_,psi1,_,_,_) in r_stats]) )
+    #r_stats_list.append( np.array([npix for (_,_,_,_,_,_,npix,_,_) in r_stats]) )
+    r_stats_list.append( np.array([sharp for (_,_,_,_,_,_,_,sharp,_) in r_stats]) )
+    #r_stats_list.append( np.array([psi2 for (_,_,_,_,_,_,_,_,psi2) in r_stats]) )
+
+    colors = plt.cm.rainbow(np.linspace(0., 1., len(r_stats_list)))
+
+    fig = plt.figure(figsize=(15,7))
+    m = r_stats_list[0].max(); m=1
+    plt.plot(x_var, r_stats_list[0]/m, color=colors[0], marker='o', label='RMS x {0:.3f}'.format(m))
+    m = r_stats_list[1].max(); m=1
+    plt.plot(x_var, r_stats_list[1]/m, color=colors[1], marker='o', label='Flux addition x {0:.3f}'.format(m))
+    m = r_stats_list[2].max(); m=1
+    plt.plot(x_var, r_stats_list[2]/m, color=colors[2], marker='o', label='Flux lost x {0:.3f}'.format(m))
+    m = r_stats_list[3].max()
+    #plt.plot(x_var, r_stats_list[3]/m, color=colors[3], marker='o', label='Sharpness x {0:.3f}'.format(m))
+    plt.grid()
+    plt.tick_params(axis='both', which='major', labelsize=20)
+    plt.xlabel(x_label, fontsize=20)
+    #plt.legend(bbox_to_anchor=(1.275, 1.0), prop={'size':15})
+    plt.legend(loc='best', prop={'size':20})
+
+    if name is not None: plt.savefig(name, format='eps', dpi=1000)
+    plt.show()
