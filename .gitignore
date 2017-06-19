@@ -36,6 +36,7 @@ results/
 *.tar.gz
 *.npy
 *.pkl
+*.sdf
 
 \#*\#
 .\#*
