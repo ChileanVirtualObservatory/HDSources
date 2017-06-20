@@ -11,7 +11,7 @@ from gmr import isd_diss_full
 
 def image_plot(data, title='FITS image'):
     plt.figure(figsize=(10,10))
-    im = plt.imshow(data, cmap=plt.cm.afmhot, interpolation=None)
+    im = plt.imshow(data, cmap=plt.cm.gray_r, interpolation=None)
     plt.title(title)
     #plt.axis('off')
     divider = make_axes_locatable(plt.gca())
@@ -26,7 +26,7 @@ def thresholded_image_plot(data, level):
     _data = np.zeros(data.shape)
     mask = data > level
     _data[mask] = data[mask]
-    im = ax.imshow(_data, cmap=plt.cm.afmhot)
+    im = ax.imshow(_data, cmap=plt.cm.gray_r)
     plt.title('Thresholded data at: {0}'.format(level))
     #plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -87,7 +87,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
     plt.figure(figsize=(18,12))
     plt.subplot(1,3,1)
     ax = plt.gca()
-    im = ax.imshow(f, vmin=0., vmax=1., cmap=plt.cm.afmhot)
+    im = ax.imshow(f, vmin=0., vmax=1., cmap=plt.cm.gray_r)
     plt.title('Original')
     plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -97,7 +97,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
     # approximated solution plot
     plt.subplot(1,3,2)
     ax = plt.gca()
-    im = ax.imshow(u, vmin=0., vmax=1., cmap=plt.cm.afmhot)
+    im = ax.imshow(u, vmin=0., vmax=1., cmap=plt.cm.gray_r)
     plt.title('Solution')
     plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -107,7 +107,7 @@ def solution_plot(dfunc, c, sig, xc, yc, dims, base_level=0., mask=None,
     # residual plot
     plt.subplot(1,3,3)
     ax = plt.gca()
-    im = ax.imshow(res, vmin=0., vmax=1., cmap=plt.cm.afmhot)
+    im = ax.imshow(res, vmin=0., vmax=1., cmap=plt.cm.gray_r)
     plt.title('Residual')
     plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -192,7 +192,7 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     y_scale = data.shape[1]-1
     if (center_points is not None) and (collocation_points is None):
         plt.figure(figsize=(10,10))
-        plt.imshow(data, cmap=plt.cm.gray)
+        plt.imshow(data, cmap=plt.cm.gray_r)
         plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='magenta', s=12, label='center')
         plt.grid()
         plt.tick_params(axis='both', which='major', labelsize=20)
@@ -201,7 +201,7 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
         #plt.axis('off')
     elif (center_points is None) and (collocation_points is not None):
         plt.figure(figsize=(10,10))
-        plt.imshow(data, cmap=plt.cm.afmhot)
+        plt.imshow(data, cmap=plt.cm.gray_r)
         plt.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='green', s=12, label='collocation')
         if title is not None: plt.title(title)
         else: plt.title('Collocation points')
@@ -209,20 +209,20 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     elif (center_points is not None) and (collocation_points is not None):
         fig = plt.figure(figsize=(20,15))
         ax1 = fig.add_subplot(121)
-        ax1.imshow(data, cmap=plt.cm.afmhot)
+        ax1.imshow(data, cmap=plt.cm.gray_r)
         ax1.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='green', s=12, label='center')
         if title is not None: plt.title(title)
         else: ax1.set_title('Center points')
         #ax1.axis('off')
         ax2 = fig.add_subplot(122)
-        ax2.imshow(data, cmap=plt.cm.afmhot)
+        ax2.imshow(data, cmap=plt.cm.gray_r)
         ax2.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='green', s=12, label='collocation')
         if title is not None: plt.title(title)
         else: ax2.set_title('Collocation points')
         #ax2.axis('off')
     if (boundary_points is not None) and len(boundary_points[:,0])!=0:
         plt.figure(figsize=(10,10))
-        plt.imshow(data, cmap=plt.cm.afmhot)
+        plt.imshow(data, cmap=plt.cm.gray_r)
         plt.scatter(boundary_points[:,1]*y_scale, boundary_points[:,0]*x_scale, c='green', s=12, label="boundary")
         #plt.axis('off')
     #plt.colorbar(im, cax=cax)
@@ -244,17 +244,17 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, 
     xe = Xe.ravel(); ye = Ye.ravel()  
     
     plt.figure(figsize=(10,10))
-    plt.tick_params(axis='both', which='major', labelsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=1)
     plt.grid()
     if show_title: plt.title('{0} components solution'.format(n_comp))
 
     ax = plt.subplot(1,1,1)
-    ax.imshow(elm.data, cmap=plt.cm.gray)
+    ax.imshow(elm.data, cmap=plt.cm.gray_r)
 
     # generating the color of sources
-    maxclump = 100
+    maxclump = 20
     color = plt.cm.rainbow(np.linspace(0., 1., maxclump))
-    np.random.seed(0); np.random.shuffle(color)
+    np.random.seed(1); np.random.shuffle(color)
     color = color[0:n_comp]
 
     if n_levels==1:
@@ -279,10 +279,10 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, 
 
         if show_isd:
             _isd = isd_diss_full(w[indexes], mu[indexes], Sig[indexes])
-            cs = ax.contour(_u, levels=levels, colors=[color[i]])
+            cs = ax.contour(_u, levels=levels, colors=[color[i]], linewidths=4)
             cs.collections[0].set_label('ISD: {0}'.format(_isd))
         else:
-            ax.contour(_u, levels=levels, colors=[color[i]])
+            ax.contour(_u, levels=levels, colors=[color[i]], linewidths=4)
     if show_isd: plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
     if save_path is not None:
         plt.savefig(save_path, format='eps', dpi=150)
@@ -312,7 +312,7 @@ def points_plot3D(points, title=None):
 
 def slices_plot(data, slc):
     plt.figure(figsize=(5,5))
-    im = plt.imshow(data[slc], vmin=0, vmax=1., cmap=plt.cm.afmhot)
+    im = plt.imshow(data[slc], vmin=0, vmax=1., cmap=plt.cm.gray_r)
     plt.title('3D cube at slice: {0}'.format(slc))
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())
@@ -343,7 +343,7 @@ def solution_plot3D(elm):
     plt.figure(figsize=(18,12))
     plt.subplot(1,3,1)
     ax = plt.gca()
-    im = ax.imshow(_data, vmin=0., vmax=1., cmap=plt.cm.afmhot)
+    im = ax.imshow(_data, vmin=0., vmax=1., cmap=plt.cm.gray_r)
     plt.title('Original')
     plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -353,7 +353,7 @@ def solution_plot3D(elm):
     # approximated solution plot
     plt.subplot(1,3,2)
     ax = plt.gca()
-    im = ax.imshow(_u, vmin=0., vmax=1., cmap=plt.cm.afmhot)
+    im = ax.imshow(_u, vmin=0., vmax=1., cmap=plt.cm.gray_r)
     plt.title('Solution')
     plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -363,7 +363,7 @@ def solution_plot3D(elm):
     # residual plot
     plt.subplot(1,3,3)
     ax = plt.gca()
-    im = ax.imshow(res, vmin=0., vmax=1., cmap=plt.cm.afmhot)
+    im = ax.imshow(res, vmin=0., vmax=1., cmap=plt.cm.gray_r)
     plt.title('Residual')
     plt.axis('off')
     divider = make_axes_locatable(ax)
@@ -375,14 +375,14 @@ def solution_plot3D(elm):
 def comparative_slices_plot(data1, data2, slc):
     plt.figure(figsize=(10,5))
     plt.subplot(1,2,1)
-    im = plt.imshow(data1[slc], vmin=0, vmax=1., cmap=plt.cm.afmhot)
+    im = plt.imshow(data1[slc], vmin=0, vmax=1., cmap=plt.cm.gray_r)
     plt.title('3D original cube at slice: {0}'.format(slc))
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     plt.subplot(1,2,2)
-    im = plt.imshow(data2[slc], vmin=0, vmax=1., cmap=plt.cm.afmhot)
+    im = plt.imshow(data2[slc], vmin=0, vmax=1., cmap=plt.cm.gray_r)
     plt.title('3D approximated cube at slice: {0}'.format(slc))
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())
@@ -521,7 +521,10 @@ def stat_plots(x_var, y_list, labels, xlabel=None, ylabel=None, save_name=None, 
     Function to plot a single residual stat for multiple images
     """
     plt.figure(figsize=(7,4))
-    colors = plt.cm.rainbow(np.linspace(0., 1., len(y_list)))
+    colors = plt.cm.rainbow(np.linspace(0., 1., 100))
+    np.random.seed(0)
+    np.random.shuffle(colors)
+    colors = colors[0:len(y_list)]
     for i,y_var in enumerate(y_list):
         plt.plot(x_var, y_var, c=colors[i], marker='o', label=labels[i])
     if xlabel is not None: plt.xlabel(xlabel, fontsize=30)
