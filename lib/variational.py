@@ -74,7 +74,7 @@ def d2psi2(x, lamb=1.):
 class ELModel():
     def __init__(self, data, dfunc, dims, xe, ye, xc, yc, xb, yb, c0, sig0, d1psi1=d1psi1, 
                 d1psi2=d1psi2, d2psi2=d2psi2, a=0., b=0., lamb1=1., lamb2=1., base_level=0.,
-                minsig=None, maxsig=None, pix_freedom=1., support=5.):
+                minsig=None, maxsig=None, pix_freedom=1., support=5., mask=None):
 
         f0 = dfunc( np.vstack([xe,ye]).T )
         fb = dfunc( np.vstack([xb,yb]).T )
@@ -88,10 +88,10 @@ class ELModel():
         
         # important atributes
         self.data = data
-        if base_level > 0.:
+        if mask is None:
             self.mask = data > base_level
         else: 
-            self.mask = None
+            self.mask = mask
         self.dfunc = dfunc
         self.dims = dims
         self.f0 = f0
