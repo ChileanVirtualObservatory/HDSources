@@ -229,7 +229,7 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     #plt.colorbar(im, cax=cax)
     #fig.legend(bbox_to_anchor=(1.2, 1.0))
     if save_path is not None:
-        plt.savefig(save_path, format='eps', dpi=50)
+        plt.savefig(save_path, format='eps', dpi=50, bbox_inches='tight')
     plt.show()
 
     
@@ -286,7 +286,7 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, 
             ax.contour(_u, levels=levels, colors=[color[i]], linewidths=4)
     if show_isd: plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
     if save_path is not None:
-        plt.savefig(save_path, format='eps', dpi=150)
+        plt.savefig(save_path, format='eps', dpi=150, bbox_inches='tight')
     plt.show()
 
 
@@ -310,7 +310,7 @@ def caa_show(data, caa, save_path=None):
     plt.grid()
     plt.imshow(rgba)
     if save_path is not None:
-        plt.savefig(save_path, format='eps', dpi=150)
+        plt.savefig(save_path, format='eps', dpi=150, bbox_inches='tight')
     plt.show()
     
 
@@ -537,7 +537,7 @@ def _stat_plot(x_var, r_stats, stat, x_label='', loglog=False, n=5, slope=None, 
         plt.xlabel(x_label, fontsize=20)
         plt.ylabel(y_label[i], fontsize=20)
 
-    if name is not None: plt.savefig(name, format='eps', dpi=1000)
+    if name is not None: plt.savefig(name, format='eps', dpi=1000, bbox_inches='tight')
     plt.show()
 
 
@@ -559,7 +559,7 @@ def stat_plots(x_var, y_list, labels, xlabel=None, ylabel=None, save_name=None, 
     plt.tight_layout()
     if legend: plt.legend(loc='best', prop={'size':20})
     if save_name is not None:
-        plt.savefig(save_name, format='eps', dpi=1000)
+        plt.savefig(save_name, format='eps', dpi=1000, bbox_inches='tight')
     plt.show()
 
 
@@ -597,5 +597,5 @@ def all_stats_plot(x_var, r_stats, x_label='', loglog=False, n=5, slope=None, na
     #plt.legend(bbox_to_anchor=(1.275, 1.0), prop={'size':15})
     plt.legend(loc='best', prop={'size':20})
 
-    if name is not None: plt.savefig(name, format='eps', dpi=1000)
+    if name is not None: plt.savefig(name, format='eps', dpi=1000, bbox_inches='tight')
     plt.show()
