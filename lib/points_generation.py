@@ -82,7 +82,7 @@ def random_centers_generation(data, n_centers, base_level=None, power=2., umask=
     return points_positions[selected]
 
 
-def qrandom_centers_generation(dfunc, n_points, base_level, ndim=2, get_size=50, umask=None):
+def qrandom_centers_generation(dfunc, n_points, base_level, ndim=2, get_size=50, mask=None):
     # generating the sequencer
     sequencer = ghalton.Halton(ndim)
 
@@ -119,6 +119,29 @@ def boundary_map(data, base_level):
                     # in case pixel_map[i,j] has a unusable neighbor pixel
                     # then pixel_map[i,j] is a border pixel
                     if pixel_map[i+p,j+q]==False: border_map[i,j] = True
+    return border_map
+
+
+def _boundary_map(pixel_map):
+    """
+    Function specific for CAA boundaries detection.
+    """
+    m,n = pixel_map.shape
+    if isinstance(pixel_map, ma.MaskedArray):
+        pixel_map = pixel_map.filled(fill_value=False)
+    border_map = np.zeros((m,n), dtype=int)
+    for i in range(m):
+        for j in range(n):
+            # just verify valid pixels
+            if pixel_map[i,j]==False: continue
+            for p in range(-1,2):
+                for q in range(-1,2):
+                    if p==q==0: continue
+                    if i+p < 0 or j+q < 0: continue
+                    if i+p >= m or j+q >= n: continue
+                    # in case pixel_map[i,j] has a unusable neighbor pixel
+                    # then pixel_map[i,j] is a border pixel
+                    if pixel_map[i+p,j+q]!=pixel_map[i,j]: border_map[i,j] = pixel_map[i,j]
     return border_map
 
 
