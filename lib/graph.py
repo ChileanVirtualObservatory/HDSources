@@ -6,6 +6,7 @@ from utils import u_eval
 from utils3D import u_eval as u_eval3D
 from utils3D import compute_solution
 from gmr import isd_diss_full
+from points_generation import _boundary_map
 
 
 
@@ -284,6 +285,30 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, 
         else:
             ax.contour(_u, levels=levels, colors=[color[i]], linewidths=4)
     if show_isd: plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
+    if save_path is not None:
+        plt.savefig(save_path, format='eps', dpi=150)
+    plt.show()
+
+
+
+def caa_show(data, caa, save_path=None):
+    bd_map = _boundary_map(caa)
+    colors = plt.cm.rainbow(np.linspace(0., 1., bd_map.max()))
+    
+    cmap = plt.cm.gray_r
+    norm = plt.Normalize(data.min(), data.max())
+    rgba = cmap(norm(data.T))
+    
+    m,n = data.shape
+    for i in range(m):
+        for j in range(n):
+            if bd_map[i,j]==0: continue
+            rgba[i,j,:] = colors[bd_map[i,j]-1]
+
+    plt.figure(figsize=(10,10))
+    plt.tick_params(axis='both', which='major', labelsize=0)
+    plt.grid()
+    plt.imshow(rgba)
     if save_path is not None:
         plt.savefig(save_path, format='eps', dpi=150)
     plt.show()
