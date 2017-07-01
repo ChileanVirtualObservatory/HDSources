@@ -194,7 +194,7 @@ def points_plot(data, center_points=None, collocation_points=None, boundary_poin
     if (center_points is not None) and (collocation_points is None):
         plt.figure(figsize=(10,10))
         plt.imshow(data, cmap=plt.cm.gray_r)
-        plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='magenta', s=12, label='center')
+        plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, s=20, facecolor='magenta', lw = 0)
         plt.grid()
         plt.tick_params(axis='both', which='major', labelsize=20)
         if title is not None: plt.title(title) 
@@ -244,7 +244,7 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, 
     Xe,Ye = np.meshgrid(_xe, _ye, sparse=False, indexing='ij')
     xe = Xe.ravel(); ye = Ye.ravel()  
     
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(8,8))
     plt.tick_params(axis='both', which='major', labelsize=1)
     plt.grid()
     if show_title: plt.title('{0} components solution'.format(n_comp))
@@ -291,13 +291,13 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, 
 
 
 
-def caa_show(data, caa, save_path=None):
-    bd_map = _boundary_map(caa)
+def caa_show(data, caa, save_path=None,):
+    bd_map = _boundary_map(caa).T
     colors = plt.cm.rainbow(np.linspace(0., 1., bd_map.max()))
     
     cmap = plt.cm.gray_r
     norm = plt.Normalize(data.min(), data.max())
-    rgba = cmap(norm(data.T))
+    rgba = cmap(norm(data))
     
     m,n = data.shape
     for i in range(m):
@@ -305,7 +305,7 @@ def caa_show(data, caa, save_path=None):
             if bd_map[i,j]==0: continue
             rgba[i,j,:] = colors[bd_map[i,j]-1]
 
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(8,8))
     plt.tick_params(axis='both', which='major', labelsize=0)
     plt.grid()
     plt.imshow(rgba)
