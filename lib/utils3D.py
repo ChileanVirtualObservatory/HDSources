@@ -210,3 +210,7 @@ def prune(vec):
     #all values greater than 1e-3 the mean/median
     mask = vec > 1e-3*min(mean,median)
     return mask, vec[mask]
+
+
+def inv_sig_mapping(sig, minsig=0., maxsig=1.):
+    return np.sqrt( _inv_tanh((sig**2-minsig**2)/(maxsig**2-minsig**2)) )
