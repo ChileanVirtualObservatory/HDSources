@@ -75,8 +75,8 @@ if __name__ == '__main__':
     c0, sig0 = estimate_initial_guess(center_points, dist_matrix, dfunc, minsig=minsig, maxsig=maxsig, method='min_dist')
 
     # ELModel instantiation
-    elm = ELModel(data, dfunc, data.shape, xe, ye, ze, xc, yc, zc, xb, yb, zb, c0, sig0, a=1., lamb1=1,
-                      base_level=base_level, pix_freedom=3.)
+    elm = ELModel(data, dfunc, data.shape, xe, ye, ze, xc, yc, zc, xb, yb, zb, c0, sig0, 
+                  a=1., lamb1=1, base_level=base_level, pix_freedom=3., minsig=minsig, maxsig=maxsig)
 
     # solving it
     nfev =  100 * ( len(elm.get_params())+1 ) 
