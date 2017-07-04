@@ -212,5 +212,13 @@ def prune(vec):
     return mask, vec[mask]
 
 
+def sig_mapping(sig, minsig=0., maxsig=1.):
+    return np.sqrt( (maxsig**2-minsig**2)*np.tanh(sig**2) + minsig**2 )
+
+
+def _inv_tanh(x):
+    return 0.5*np.log((1+x)/(1-x))
+
+
 def inv_sig_mapping(sig, minsig=0., maxsig=1.):
     return np.sqrt( _inv_tanh((sig**2-minsig**2)/(maxsig**2-minsig**2)) )
