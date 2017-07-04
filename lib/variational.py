@@ -85,7 +85,6 @@ class ELModel():
         Nc = len(xc)
         Nb = len(xb)
 
-        
         # important atributes
         self.data = data
         if mask is None:
@@ -100,7 +99,8 @@ class ELModel():
         self.xe = xe; self.ye = ye
         self.xc = xc; self.yc = yc
         self.xc0 = xc; self.yc0 = yc
-        self.theta_xc = np.zeros(Nc); self.theta_yc = np.zeros(Nc)
+        self.theta_xc = np.zeros(Nc)
+        self.theta_yc = np.zeros(Nc)
         self.deltax = pix_freedom * 1./dims[0]
         self.deltay = pix_freedom * 1./dims[1]
         # minimal and maximum broadening
@@ -151,7 +151,7 @@ class ELModel():
 
 
     def set_params(self, params):
-        N = len(params)/4
+        N = len(params)//4
         self.theta_xc = params[0:N]
         self.theta_yc = params[N:2*N]
         self.c = params[2*N:3*N]
@@ -351,19 +351,6 @@ class ELModel():
         yc = self.yc0 + self.deltay * np.sin(theta_yc)
         c = params[2*N:3*N]**2
         sig = sig_mapping(params[3*N:4*N], self.minsig, self.maxsig)
-
-        # if np.any(np.isnan(xc)):
-        #     print("xc")
-        # if np.any(np.isnan(yc)):
-        #     print("yc")
-        # if np.any(np.isnan(c)):
-        #     print("c")
-        # if np.any(np.isnan(sig)):
-        #     print("sig")
-        # if np.any(np.isnan(params)):
-        #     return -1
-
-
 
         # evaluation points
         xe = np.hstack([self.xe, xc]); ye = np.hstack([self.ye, yc])

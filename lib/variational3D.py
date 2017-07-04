@@ -69,17 +69,16 @@ def d2psi2(x, lamb=1.):
 
 
 
+
 #################################################################
 # Euler-Lagrange class definition
 #################################################################
 class ELModel():
     def __init__(self, data, dfunc, dims, xe, ye, ze, xc, yc, zc, xb, yb, zb, c0, sig0, d1psi1=d1psi1, 
                  d1psi2=d1psi2, d2psi2=d2psi2, a=0., b=0., lamb1=1., lamb2=1., base_level=0., minsig=None,
-                 maxsig=None, pix_freedom=1., support=5.):
+                 maxsig=None, pix_freedom=1., support=5., mask=None):
         f0 = dfunc( np.vstack([xe,ye,ze]).T )
         fb = dfunc( np.vstack([xb,yb,zb]).T )
-        #f0 = np.array([dfunc([xe[i],ye[i],ze[i]]) for i in range(len(xe))]).ravel()
-        #fb = np.array([dfunc([xb[i],yb[i],zb[i]]) for i in range(len(xb))]).ravel()
         len_f0 = len(f0)
         len_c0 = len(c0)
         len_sig0 = len(sig0)
@@ -87,14 +86,12 @@ class ELModel():
         Nc = len(xc)
         Nb = len(xb)
         
-        """
-        Storing important atributes
-        """
+        # important attribute
         self.data = data
-        if base_level > 0.:
+        if mask is None:
             self.mask = data > base_level
         else:
-            self.mask = None
+            self.mask = mask
         self.dfunc = dfunc
         self.dims = dims
         self.f0 = f0
@@ -116,13 +113,13 @@ class ELModel():
         else:
             self.minsig = minsig
         if maxsig is None:
-            # reasoning: SOME REASONING HERE
-            self.maxsig = 30*self.minsig
+            K = np.sum(self.mask)//Nc
+            self.maxsig = K*self.minsig
         else:
             self.maxsig = maxsig
         # inverse transformation to (real) model parameters
         self.c = np.sqrt(c0)
-        self.sig = logit((sig0 - self.minsig) / self.maxsig)
+        self.sig = inv_sig_mapping(sig0, minsig, maxsig)
         self.d1psi1 = d1psi1
         self.d1psi2 = d1psi2
         self.d2psi2 = d2psi2
@@ -135,6 +132,7 @@ class ELModel():
         # solution variables
         self.scipy_sol = None
         self.elapsed_time = None
+        self.residual_stats = None
 
         
     def set_centers(self, theta_xc, theta_yc, theta_zc):        
@@ -158,7 +156,7 @@ class ELModel():
     
     
     def set_params(self, params):
-        N = len(params)/5
+        N = len(params)//5
         self.theta_xc = params[0:N]
         self.theta_yc = params[N:2*N]
         self.theta_zc = params[2*N:3*N]
@@ -185,7 +183,7 @@ class ELModel():
         yc = self.yc
         zc = self.zc
         c = self.c**2
-        sig = self.maxsig * logistic(self.sig) + self.minsig
+        sig = sig_mapping(self.sig, self.minsig, self.maxsig)
         return xc, yc, zc, c, sig
 
 
@@ -266,7 +264,7 @@ class ELModel():
     
         
     def F(self, params):
-        N = len(params)/5
+        N = len(params)//5
         theta_xc = params[0:N]
         theta_yc = params[N:2*N]
         theta_zc = params[2*N:3*N]
@@ -276,17 +274,20 @@ class ELModel():
         yc = self.yc0 + self.deltay * np.sin(theta_yc)
         zc = self.zc0 + self.deltaz * np.sin(theta_zc)
         c = params[3*N:4*N]**2
-        sig = self.maxsig * logistic(params[4*N:5*N]) + self.minsig
+        sig = sig_mapping(params[4*N:5*N], self.minsig, self.maxsig)
         
         # evaluation points
-        xe = self.xe; ye = self.ye; ze = self.ze
+        xe = np.hstack([self.xe, xc]); ye = np.hstack([self.ye, yc]); ze = np.hstack([self.ze, zc])
+        #xe = self.xe; ye = self.ye; ze = self.ze
         xb = self.xb; yb = self.yb; zb = self.zb
         
         # computing u, ux, uy, ...
         u = u_eval(c, sig, xc, yc, zc, xe, ye, ze, support=5.) + self.base_level
         
         # computing the EL equation
-        el = 2.*(u-self.f0) + self.a*self.d1psi1(u-self.f0, self.lamb1)
+        #f0 = self.f0
+        f0 = np.hstack([ self.f0, self.dfunc(np.vstack([xc,yc,zc]).T) ])
+        el = 2.*(u-f0) + self.a*self.d1psi1(u-f0, self.lamb1)
         
         return el
 
