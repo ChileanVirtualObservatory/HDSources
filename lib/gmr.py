@@ -220,6 +220,67 @@ def gaussian_reduction(c, mu, sig, n_comp, metric='KL', verbose=True):
     mu = list(map(np.array, mu.tolist()))
     if d==2: sig = [(s**2)*np.identity(2) for s in sig]
     elif d==3: sig = [(s**2)*np.identity(3) for s in sig]
+
+    # indexes of the actual gaussian components
+    components = [i for i in range(len(c))]
+    components_dict = {i:[i] for i in range(len(c))}
+    htree = {}
+    new_comp = len(c)
+
+    # main loop
+    while len(components)>n_comp:
+        m = len(components)
+        diss_min = np.inf
+        for i in range(m):
+            ii = components[i]
+            for j in range(i+1,m):
+                jj = components[j]
+                diss = _metric(c[ii], mu[ii], sig[ii], c[jj], mu[jj], sig[jj])
+                if diss < diss_min: 
+                    i_min = i; j_min = j
+                    ii_min = ii; jj_min = jj 
+                    diss_min = diss
+        # compute the moment preserving  merged gaussian
+        c_m, mu_m, sig_m = merge(c[ii_min], mu[ii_min], sig[ii_min], 
+                                 c[jj_min], mu[jj_min], sig[jj_min])
+        
+        if (metric=='ISD' or metric=='ISD_') and verbose:
+            print('Merged components {0} and {1} with {2} ISD dist'.format(ii_min, jj_min, diss_min))
+            isd_hist.append(diss_min)    
+        elif metric=='KL' and verbose:
+            ISD_diss = isd_diss(c[ii_min], mu[ii_min], sig[ii_min], c[jj_min], mu[jj_min], sig[jj_min])
+            print('Merged components {0} and {1} with {2} KL dist and {3} ISD dist'.format(ii_min, jj_min, diss_min, ISD_diss))
+            isd_hist.append(ISD_diss), kl_hist.append(diss_min)
+
+        # updating structures   
+        del components[max(i_min, j_min)]
+        del components[min(i_min, j_min)]
+        components.append(new_comp)
+        c.append(c_m); mu.append(mu_m); sig.append(sig_m)
+        htree[new_comp] = (min(ii_min,jj_min), max(ii_min,jj_min))
+        tmp = components_dict[min(ii_min,jj_min)] + components_dict[max(ii_min,jj_min)]
+        tmp.sort()
+        components_dict[new_comp] = tmp
+        new_comp += 1
+    return (components_dict,htree)
+
+def _gaussian_reduction_(c, mu, sig, n_comp, metric='KL', verbose=True):
+    if metric=='KL': 
+        _metric = kl_diss
+        isd_hist = list(); kl_hist = list()
+    elif metric=='ISD': 
+        _metric = isd_diss
+        isd_hist = list(); kl_hist = None
+    elif metric=='ISD_':
+        _metric = isd_diss_
+        isd_hist = list(); kl_hist = None
+    else: return None
+
+    d = mu.shape[1]
+    c = c.tolist()
+    mu = list(map(np.array, mu.tolist()))
+    if d==2: sig = [(s**2)*np.identity(2) for s in sig]
+    elif d==3: sig = [(s**2)*np.identity(3) for s in sig]
     # indexes of the actual gaussian components
     components = [[i] for i in range(len(c))]
     components_dict = {len(components) : copy.deepcopy(components)}
