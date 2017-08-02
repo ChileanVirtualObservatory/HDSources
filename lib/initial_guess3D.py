@@ -39,10 +39,11 @@ def estimate_initial_guess(center_points, dist_matrix, dfunc, minsig=None, maxsi
         #first we find the distance to the nearest neighbor
         for i in range(m):
             for j in range(m):
-                #dont take into account the same point
-                if i==j: continue
-                d = dist_matrix[i,j]
-                if d<min_dist[i]: min_dist[i] = d
+                #dont take into account the same point or
+                #center point in the same position (anomalous case)
+                if dist_matrix[i,j] == 0.: continue
+                if dist_matrix[i,j] < min_dist[i]:
+                    min_dist[i] = dist_matrix[i,j]
         #second, we find the number of neighbors on the neighborhood
         for i in range(m):
             for j in range(m):
@@ -58,11 +59,11 @@ def estimate_initial_guess(center_points, dist_matrix, dfunc, minsig=None, maxsi
                 c_arr[i] = dfunc(center_points[i])[0]
                 sig_arr[i] = minsig
             else:
-                c_arr[i] = dfunc(center_points[i])[0]/(num_neigh[i]+1)
+                c_arr[i] = 0.5*dfunc(center_points[i])[0]/(num_neigh[i]+1)
                 if min_dist[i] < minsig:
                     sig_arr[i] = minsig
                 elif min_dist[i] > maxsig:
-                    sig_arr[i] = maxsig
+                    sig_arr[i] = 0.99*maxsig
                 else:
                     sig_arr[i] = min_dist[i]
     return (c_arr,sig_arr)
