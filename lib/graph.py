@@ -9,11 +9,13 @@ from gmr import isd_diss_full
 from points_generation import _boundary_map
 
 
+font = {'fontname':'Times New Roman'}
 
-def image_plot(data, title='FITS image'):
+def image_plot(data, title=None):
     plt.figure(figsize=(10,10))
     im = plt.imshow(data, cmap=plt.cm.gray_r, interpolation=None)
-    plt.title(title)
+    if title is not None: plt.title(title)
+    plt.grid()
     #plt.axis('off')
     divider = make_axes_locatable(plt.gca())
     cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -188,52 +190,33 @@ def residual_plot(residual_variance, residual_entropy, residual_rms, iter_list):
 
 
     
-def points_plot(data, center_points=None, collocation_points=None, boundary_points=None, title=None, save_path=None):
+def points_plot(data, points_positions=None, colors=None, labels=[], title=None, save_path=None):
+    """
+    Function to properly plot gaussian centers in the data.
+
+    data : np.array with the data
+    points_positions : list with the points to plot
+    colors : list of colors used to plot each points
+    title : string with title of the plot
+    save_path : string with the path where to save the image
+    """
     x_scale = data.shape[0]-1
     y_scale = data.shape[1]-1
-    if (center_points is not None) and (collocation_points is None):
-        plt.figure(figsize=(10,10))
-        plt.imshow(data, cmap=plt.cm.gray_r)
-        plt.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, s=20, facecolor='magenta', lw = 0)
-        plt.grid()
-        plt.tick_params(axis='both', which='major', labelsize=20)
-        if title is not None: plt.title(title) 
-        else: plt.title('Center points')
-        #plt.axis('off')
-    elif (center_points is None) and (collocation_points is not None):
-        plt.figure(figsize=(10,10))
-        plt.imshow(data, cmap=plt.cm.gray_r)
-        plt.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='green', s=12, label='collocation')
-        if title is not None: plt.title(title)
-        else: plt.title('Collocation points')
-        #plt.axis('off')
-    elif (center_points is not None) and (collocation_points is not None):
-        fig = plt.figure(figsize=(20,15))
-        ax1 = fig.add_subplot(121)
-        ax1.imshow(data, cmap=plt.cm.gray_r)
-        ax1.scatter(center_points[:,1]*y_scale, center_points[:,0]*x_scale, c='green', s=12, label='center')
-        if title is not None: plt.title(title)
-        else: ax1.set_title('Center points')
-        #ax1.axis('off')
-        ax2 = fig.add_subplot(122)
-        ax2.imshow(data, cmap=plt.cm.gray_r)
-        ax2.scatter(collocation_points[:,1]*y_scale, collocation_points[:,0]*x_scale, c='green', s=12, label='collocation')
-        if title is not None: plt.title(title)
-        else: ax2.set_title('Collocation points')
-        #ax2.axis('off')
-    if (boundary_points is not None) and len(boundary_points[:,0])!=0:
-        plt.figure(figsize=(10,10))
-        plt.imshow(data, cmap=plt.cm.gray_r)
-        plt.scatter(boundary_points[:,1]*y_scale, boundary_points[:,0]*x_scale, c='green', s=12, label="boundary")
-        #plt.axis('off')
-    #plt.colorbar(im, cax=cax)
-    #fig.legend(bbox_to_anchor=(1.2, 1.0))
+    plt.figure(figsize=(10,10))
+    plt.imshow(data, cmap=plt.cm.gray_r)
+    for i,points in enumerate(points_positions):
+        plt.scatter(points[:,1]*y_scale, points[:,0]*x_scale, s=35, 
+            facecolor=colors[i], lw=0, label=labels[i])
+        plt.legend(loc=4, prop={'size': 20})  
+    plt.grid()
+    plt.tick_params(axis='both', which='major', labelsize=1)
+    if title is not None: plt.title(title) 
     if save_path is not None:
         plt.savefig(save_path, format='eps', dpi=50, bbox_inches='tight')
     plt.show()
 
     
-def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, show_isd=False, save_path=None):
+def components_plot(elm, components_list, n_levels=1, show_title=False, show_isd=False, save_path=None):
     # get all the (mapped) parameters
     xc, yc, c, sig = elm.get_params_mapped()
     
@@ -247,6 +230,7 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, 
     plt.figure(figsize=(8,8))
     plt.tick_params(axis='both', which='major', labelsize=1)
     plt.grid()
+    n_comp = len(components_list)
     if show_title: plt.title('{0} components solution'.format(n_comp))
 
     ax = plt.subplot(1,1,1)
@@ -270,7 +254,7 @@ def components_plot(elm, components_dict, n_comp, n_levels=1, show_title=False, 
         Sig = np.zeros((len(w),2,2))
         Sig[:,0,0] = sig; Sig[:,1,1] = sig
 
-    for i,indexes in enumerate(components_dict[n_comp]):
+    for i,indexes in enumerate(components_list):
         _xc = xc[indexes]
         _yc = yc[indexes]
         _c = c[indexes]
@@ -336,7 +320,7 @@ def points_plot3D(points, title=None):
 
 
 def slices_plot(data, slc):
-    plt.figure(figsize=(5,5))
+    plt.figure(figsize=(8,8))
     im = plt.imshow(data[slc], vmin=0, vmax=1., cmap=plt.cm.gray_r)
     plt.title('3D cube at slice: {0}'.format(slc))
     plt.axis('off')
@@ -416,7 +400,7 @@ def comparative_slices_plot(data1, data2, slc):
     plt.show()
 
 
-def components_plot3D(elm, components_dict, n_comp, n_levels=10):
+def components_plot3D(elm, components_list, n_levels=1, save_path=None):
     # get all the (mapped) parameters
     xc, yc, zc, c, sig = elm.get_params_mapped()
 
@@ -426,35 +410,74 @@ def components_plot3D(elm, components_dict, n_comp, n_levels=10):
     _ze = np.linspace(0., 1., elm.dims[2]+2)[1:-1]
     len_xe = len(_xe); len_ye = len(_ye); len_ze = len(_ze)
     Xe,Ye,Ze = np.meshgrid(_xe, _ye, _ze, sparse=False, indexing='ij')
-    xe = Xe.ravel(); ye = Ye.ravel(); ze = Ze.ravel()  
+    xe = Xe.ravel(); ye = Ye.ravel(); ze = Ze.ravel()
 
-    plt.figure(figsize=(8,8))
-    plt.title('{0} components solution'.format(n_comp))
-    plt.axis('off')
-    ax = plt.subplot(1,1,1)
-
-    # stacked data, mapping to [0,1] and display 
-    _data = elm.data.sum(axis=0)
-    dmin = _data.min(); dmax = _data.max()
-    _data -= dmin
-    _data /= dmax
-    ax.imshow(_data, cmap=plt.cm.afmhot)
-
-    # contours configuration
-    minval = ((elm.base_level*elm.dims[0]) - dmin) / dmax
+    n_comp = len(components_list)
     color = plt.cm.rainbow(np.linspace(0., 1., n_comp))
-    levels = np.linspace(minval+0.01, 0.95, n_levels)
 
-    for i,indexes in enumerate(components_dict[n_comp]):
+    for axis in range(3):
+        if axis==0: plt.figure(figsize=(8,8))
+        elif axis==1: plt.figure(figsize=(8,4))
+        elif axis==2: plt.figure(figsize=(4,8))
+        ax = plt.subplot(1,1,1)
+
+        # stacked data, mapping to [0,1] and display
+        _data = elm.data.sum(axis=axis)
+        if axis==2: _data = _data.T
+        dmin = _data.min(); dmax = _data.max()
+        _data -= dmin; _data /= dmax
+        ax.imshow(_data, cmap=plt.cm.gray_r, aspect='auto')
+        if axis==0:       
+            plt.xlabel("RA", fontsize=20); plt.ylabel("DEC", fontsize=20)  
+        elif axis==1:
+            plt.xlabel("RA", fontsize=20); plt.ylabel("FREQ", fontsize=20)
+        elif axis==2:
+            plt.xlabel("FREQ", fontsize=20); plt.ylabel("DEC", fontsize=20)
+            ax.yaxis.set_label_position("right")
+            ax.yaxis.tick_right()
+        ax.tick_params(axis='both', which='major', labelsize=15)
+        ax.grid()
+
+        # contours configuration
+        minval = ((elm.base_level*elm.dims[axis]) - dmin) / dmax
+        levels = np.linspace(minval+0.01, 0.95, n_levels)
+
+        for i,indexes in enumerate(components_list):
+            _xc = xc[indexes]
+            _yc = yc[indexes]
+            _zc = zc[indexes]
+            _c = c[indexes]
+            _sig = sig[indexes]
+            u = u_eval3D(_c, _sig, _xc, _yc, _zc, xe, ye, ze, support=elm.support) + elm.base_level
+            _u = u.reshape(len_xe, len_ye, len_ze).sum(axis=axis)
+            if axis==2: _u = _u.T
+            _u -= dmin; _u /= dmax
+            ax.contour(_u, levels=levels, colors=[color[i]], linewidths=4)
+        if save_path is not None:
+            plt.savefig(save_path+"_{0}C_A{1}.eps".format(n_comp, axis), format='eps', dpi=150, bbox_inches='tight')
+        plt.show()
+
+    total_flux = elm.data.sum()
+    plt.figure(figsize=(8,8))
+    for i,indexes in enumerate(components_list):
         _xc = xc[indexes]
         _yc = yc[indexes]
         _zc = zc[indexes]
         _c = c[indexes]
         _sig = sig[indexes]
         u = u_eval3D(_c, _sig, _xc, _yc, _zc, xe, ye, ze, support=elm.support) + elm.base_level
-        _u = u.reshape(len_xe, len_ye, len_ze).sum(axis=0)
-        _u -= dmin; _u /= dmax
-        ax.contour(_u, levels=levels, colors=[color[i]])
+        u = u.reshape(len_xe, len_ye, len_ze)
+        #base = np.sum(u>0.)*elm.base_level
+        #_u -= dmin; _u /= dmax
+        f = u.sum(axis=(1,2))
+        f /= total_flux
+        plt.plot(f, '--', lw=4, color=color[i], ms=6)
+    plt.xlabel("FREQ", fontsize=20)
+    plt.ylabel("Standardized flux", fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=15)
+    plt.grid()   
+    if save_path is not None:
+        plt.savefig(save_path+"_{0}C_freq.eps".format(n_comp), format='eps', dpi=150, bbox_inches='tight')
     plt.show()
 
 
@@ -552,12 +575,48 @@ def stat_plots(x_var, y_list, labels, xlabel=None, ylabel=None, save_name=None, 
     colors = colors[0:len(y_list)]
     for i,y_var in enumerate(y_list):
         plt.plot(x_var, y_var, c=colors[i], marker='o', label=labels[i])
-    if xlabel is not None: plt.xlabel(xlabel, fontsize=30)
-    if ylabel is not None: plt.ylabel(ylabel, fontsize=25)
+    if xlabel is not None: plt.xlabel(xlabel, fontsize=20)
+    if ylabel is not None: plt.ylabel(ylabel, fontsize=20)
     plt.grid()
     plt.tick_params(axis='both', which='major', labelsize=20)
     plt.tight_layout()
     if legend: plt.legend(loc='best', prop={'size':20})
+    if save_name is not None:
+        plt.savefig(save_name, format='eps', dpi=1000, bbox_inches='tight')
+    plt.show()
+
+
+def stat_plots_log(x_var, y_list, labels, xlabel=None, ylabel=None, save_name=None, legend=False):
+    """
+    Function to plot a single residual stat for multiple images
+    """
+    plt.figure(figsize=(14,4))
+    colors = plt.cm.rainbow(np.linspace(0., 1., 100))
+    np.random.seed(0)
+    np.random.shuffle(colors)
+    colors = colors[0:len(y_list)]
+    plt.subplot(1,2,1)
+    for i,y_var in enumerate(y_list):
+        plt.plot(x_var, y_var, c=colors[i], marker='o', label=labels[i])
+    if xlabel is not None: plt.xlabel(xlabel, fontsize=20)
+    if ylabel is not None: plt.ylabel(ylabel, fontsize=20)
+    plt.grid()
+    plt.tick_params(axis='both', which='major', labelsize=20)
+    plt.tight_layout()
+    if legend: plt.legend(loc='best', prop={'size':20})
+
+    plt.subplot(1,2,2)
+    for i,y_var in enumerate(y_list):
+        plt.loglog(x_var, y_var, c=colors[i], marker='o', label=labels[i])
+    y_ref = 0.01 * x_var**2
+    plt.loglog(x_var, y_ref, c='red')
+    if xlabel is not None: plt.xlabel(xlabel, fontsize=20)
+    if ylabel is not None: plt.ylabel(ylabel, fontsize=20)
+    plt.grid()
+    plt.tick_params(axis='both', which='major', labelsize=20)
+    plt.tight_layout()
+    #if legend: plt.legend(loc='best', prop={'size':20})
+
     if save_name is not None:
         plt.savefig(save_name, format='eps', dpi=1000, bbox_inches='tight')
     plt.show()

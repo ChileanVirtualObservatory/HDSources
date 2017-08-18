@@ -11,7 +11,7 @@ def estimate_initial_guess(center_points, dfunc, R=0.05, minsig=None, maxsig=Non
     sig_arr = np.empty(m, dtype=float)
     
     if method=='mean_dist':
-        f = 1./sqrt(log(2.))
+        f = 1./np.sqrt(np.log(2.))
         mean_dist = np.zeros(m, dtype=float)
         num_neigh = np.zeros(m, dtype=float)   
         for i in range(m):
